@@ -3,7 +3,9 @@
   "version": "0.0.0",
   "description": "",
   "main": "index.js",
-  "dependencies": {},
+  "dependencies": {
+    "jquery": "^2.1.4"
+  },
   "devDependencies": {
     "babel-preset-react": "~6.1.18",
     "babelify": "~7.2.0",
