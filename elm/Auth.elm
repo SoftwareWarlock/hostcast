@@ -1,73 +1,21 @@
-module Auth (Model, Action, State, update, view, init) where
+module Auth (login) where
 
 import Effects exposing (Effects, Never)
-import Html exposing (..)
-import Html.Attributes exposing (style)
-import Html.Events exposing (onClick)
+import Task exposing (..)
+
 import Http exposing (..)
 import Json.Decode as JsonDecode
 import Json.Encode as JsonEncode
-import Task exposing (..)
 
-type State
-    = Authenticated
-    | Unauthenticated
-
-type alias Model = 
-    { token: String
-    , state: State
-    }
-
-type Action 
-    = SubmitLogin (String, String)
-    | LoginComplete (Maybe String)
-    | Logout
-
-init: (Model, Effects Action)
-init = ( { token = ""
-         , state = Unauthenticated
-         }
-       , Effects.none
-       )
-
-update: Action -> Model -> (Model, Effects Action)
-update action model =
-    case action of
-        SubmitLogin (username, password) ->
-            (model, login username password)
-
-        LoginComplete maybeToken ->
-            ( { token = (Maybe.withDefault "no token" maybeToken)
-              , state = Authenticated
-              }
-            , Effects.none
-            )
-
-        Logout ->
-            ( { token = ""
-              , state = Unauthenticated
-              }
-            , Effects.none
-            )
-
-view: Signal.Address Action -> Model -> Html
-view address model =
-    div [] 
-        [ button [ onClick address (SubmitLogin ("test", "test")) ] [ text "Login" ]
-        ]
-
-login: String -> String -> Effects Action
+login: String -> String -> Task Error String
 login username password =
-    sendAuthRequest (authRequest (loginBody username password))
-        |> Task.toMaybe
-        |> Task.map LoginComplete
-        |> Effects.task
+    sendAuthRequest (loginRequest (loginBody username password))
 
 sendAuthRequest: Request -> Task Error String
 sendAuthRequest request = fromJson decodeToken (send defaultSettings request)
 
-authRequest: Body -> Request
-authRequest body = 
+loginRequest: Body -> Request
+loginRequest body = 
     { verb = "POST"
     , headers = [ ("Content-Type", "application/json") ]
     , url = "/auth/login/"
@@ -89,4 +37,4 @@ jsonUserObject username password =
 
 decodeToken : JsonDecode.Decoder String
 decodeToken =
-      JsonDecode.at ["data", "token"] JsonDecode.string
+      JsonDecode.at ["auth_token"] JsonDecode.string

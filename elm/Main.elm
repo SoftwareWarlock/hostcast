@@ -1,5 +1,5 @@
 import Html exposing (text)
-import Auth exposing (..)
+import Login exposing (update, view, init)
 import StartApp
 import Task
 import Effects exposing (Never)

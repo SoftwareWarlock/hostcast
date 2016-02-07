@@ -5774,6 +5774,1055 @@ Elm.Effects.make = function (_elm) {
    });
    return _elm.Effects.values = {_op: _op,none: none,task: task,tick: tick,map: map,batch: batch,toTask: toTask};
 };
+Elm.Native.String = {};
+
+Elm.Native.String.make = function(localRuntime) {
+	localRuntime.Native = localRuntime.Native || {};
+	localRuntime.Native.String = localRuntime.Native.String || {};
+	if (localRuntime.Native.String.values)
+	{
+		return localRuntime.Native.String.values;
+	}
+	if ('values' in Elm.Native.String)
+	{
+		return localRuntime.Native.String.values = Elm.Native.String.values;
+	}
+
+
+	var Char = Elm.Char.make(localRuntime);
+	var List = Elm.Native.List.make(localRuntime);
+	var Maybe = Elm.Maybe.make(localRuntime);
+	var Result = Elm.Result.make(localRuntime);
+	var Utils = Elm.Native.Utils.make(localRuntime);
+
+	function isEmpty(str)
+	{
+		return str.length === 0;
+	}
+	function cons(chr, str)
+	{
+		return chr + str;
+	}
+	function uncons(str)
+	{
+		var hd = str[0];
+		if (hd)
+		{
+			return Maybe.Just(Utils.Tuple2(Utils.chr(hd), str.slice(1)));
+		}
+		return Maybe.Nothing;
+	}
+	function append(a, b)
+	{
+		return a + b;
+	}
+	function concat(strs)
+	{
+		return List.toArray(strs).join('');
+	}
+	function length(str)
+	{
+		return str.length;
+	}
+	function map(f, str)
+	{
+		var out = str.split('');
+		for (var i = out.length; i--; )
+		{
+			out[i] = f(Utils.chr(out[i]));
+		}
+		return out.join('');
+	}
+	function filter(pred, str)
+	{
+		return str.split('').map(Utils.chr).filter(pred).join('');
+	}
+	function reverse(str)
+	{
+		return str.split('').reverse().join('');
+	}
+	function foldl(f, b, str)
+	{
+		var len = str.length;
+		for (var i = 0; i < len; ++i)
+		{
+			b = A2(f, Utils.chr(str[i]), b);
+		}
+		return b;
+	}
+	function foldr(f, b, str)
+	{
+		for (var i = str.length; i--; )
+		{
+			b = A2(f, Utils.chr(str[i]), b);
+		}
+		return b;
+	}
+	function split(sep, str)
+	{
+		return List.fromArray(str.split(sep));
+	}
+	function join(sep, strs)
+	{
+		return List.toArray(strs).join(sep);
+	}
+	function repeat(n, str)
+	{
+		var result = '';
+		while (n > 0)
+		{
+			if (n & 1)
+			{
+				result += str;
+			}
+			n >>= 1, str += str;
+		}
+		return result;
+	}
+	function slice(start, end, str)
+	{
+		return str.slice(start, end);
+	}
+	function left(n, str)
+	{
+		return n < 1 ? '' : str.slice(0, n);
+	}
+	function right(n, str)
+	{
+		return n < 1 ? '' : str.slice(-n);
+	}
+	function dropLeft(n, str)
+	{
+		return n < 1 ? str : str.slice(n);
+	}
+	function dropRight(n, str)
+	{
+		return n < 1 ? str : str.slice(0, -n);
+	}
+	function pad(n, chr, str)
+	{
+		var half = (n - str.length) / 2;
+		return repeat(Math.ceil(half), chr) + str + repeat(half | 0, chr);
+	}
+	function padRight(n, chr, str)
+	{
+		return str + repeat(n - str.length, chr);
+	}
+	function padLeft(n, chr, str)
+	{
+		return repeat(n - str.length, chr) + str;
+	}
+
+	function trim(str)
+	{
+		return str.trim();
+	}
+	function trimLeft(str)
+	{
+		return str.replace(/^\s+/, '');
+	}
+	function trimRight(str)
+	{
+		return str.replace(/\s+$/, '');
+	}
+
+	function words(str)
+	{
+		return List.fromArray(str.trim().split(/\s+/g));
+	}
+	function lines(str)
+	{
+		return List.fromArray(str.split(/\r\n|\r|\n/g));
+	}
+
+	function toUpper(str)
+	{
+		return str.toUpperCase();
+	}
+	function toLower(str)
+	{
+		return str.toLowerCase();
+	}
+
+	function any(pred, str)
+	{
+		for (var i = str.length; i--; )
+		{
+			if (pred(Utils.chr(str[i])))
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+	function all(pred, str)
+	{
+		for (var i = str.length; i--; )
+		{
+			if (!pred(Utils.chr(str[i])))
+			{
+				return false;
+			}
+		}
+		return true;
+	}
+
+	function contains(sub, str)
+	{
+		return str.indexOf(sub) > -1;
+	}
+	function startsWith(sub, str)
+	{
+		return str.indexOf(sub) === 0;
+	}
+	function endsWith(sub, str)
+	{
+		return str.length >= sub.length &&
+			str.lastIndexOf(sub) === str.length - sub.length;
+	}
+	function indexes(sub, str)
+	{
+		var subLen = sub.length;
+		var i = 0;
+		var is = [];
+		while ((i = str.indexOf(sub, i)) > -1)
+		{
+			is.push(i);
+			i = i + subLen;
+		}
+		return List.fromArray(is);
+	}
+
+	function toInt(s)
+	{
+		var len = s.length;
+		if (len === 0)
+		{
+			return Result.Err("could not convert string '" + s + "' to an Int" );
+		}
+		var start = 0;
+		if (s[0] === '-')
+		{
+			if (len === 1)
+			{
+				return Result.Err("could not convert string '" + s + "' to an Int" );
+			}
+			start = 1;
+		}
+		for (var i = start; i < len; ++i)
+		{
+			if (!Char.isDigit(s[i]))
+			{
+				return Result.Err("could not convert string '" + s + "' to an Int" );
+			}
+		}
+		return Result.Ok(parseInt(s, 10));
+	}
+
+	function toFloat(s)
+	{
+		var len = s.length;
+		if (len === 0)
+		{
+			return Result.Err("could not convert string '" + s + "' to a Float" );
+		}
+		var start = 0;
+		if (s[0] === '-')
+		{
+			if (len === 1)
+			{
+				return Result.Err("could not convert string '" + s + "' to a Float" );
+			}
+			start = 1;
+		}
+		var dotCount = 0;
+		for (var i = start; i < len; ++i)
+		{
+			if (Char.isDigit(s[i]))
+			{
+				continue;
+			}
+			if (s[i] === '.')
+			{
+				dotCount += 1;
+				if (dotCount <= 1)
+				{
+					continue;
+				}
+			}
+			return Result.Err("could not convert string '" + s + "' to a Float" );
+		}
+		return Result.Ok(parseFloat(s));
+	}
+
+	function toList(str)
+	{
+		return List.fromArray(str.split('').map(Utils.chr));
+	}
+	function fromList(chars)
+	{
+		return List.toArray(chars).join('');
+	}
+
+	return Elm.Native.String.values = {
+		isEmpty: isEmpty,
+		cons: F2(cons),
+		uncons: uncons,
+		append: F2(append),
+		concat: concat,
+		length: length,
+		map: F2(map),
+		filter: F2(filter),
+		reverse: reverse,
+		foldl: F3(foldl),
+		foldr: F3(foldr),
+
+		split: F2(split),
+		join: F2(join),
+		repeat: F2(repeat),
+
+		slice: F3(slice),
+		left: F2(left),
+		right: F2(right),
+		dropLeft: F2(dropLeft),
+		dropRight: F2(dropRight),
+
+		pad: F3(pad),
+		padLeft: F3(padLeft),
+		padRight: F3(padRight),
+
+		trim: trim,
+		trimLeft: trimLeft,
+		trimRight: trimRight,
+
+		words: words,
+		lines: lines,
+
+		toUpper: toUpper,
+		toLower: toLower,
+
+		any: F2(any),
+		all: F2(all),
+
+		contains: F2(contains),
+		startsWith: F2(startsWith),
+		endsWith: F2(endsWith),
+		indexes: F2(indexes),
+
+		toInt: toInt,
+		toFloat: toFloat,
+		toList: toList,
+		fromList: fromList
+	};
+};
+
+Elm.Native.Char = {};
+Elm.Native.Char.make = function(localRuntime) {
+	localRuntime.Native = localRuntime.Native || {};
+	localRuntime.Native.Char = localRuntime.Native.Char || {};
+	if (localRuntime.Native.Char.values)
+	{
+		return localRuntime.Native.Char.values;
+	}
+
+	var Utils = Elm.Native.Utils.make(localRuntime);
+
+	return localRuntime.Native.Char.values = {
+		fromCode: function(c) { return Utils.chr(String.fromCharCode(c)); },
+		toCode: function(c) { return c.charCodeAt(0); },
+		toUpper: function(c) { return Utils.chr(c.toUpperCase()); },
+		toLower: function(c) { return Utils.chr(c.toLowerCase()); },
+		toLocaleUpper: function(c) { return Utils.chr(c.toLocaleUpperCase()); },
+		toLocaleLower: function(c) { return Utils.chr(c.toLocaleLowerCase()); }
+	};
+};
+
+Elm.Char = Elm.Char || {};
+Elm.Char.make = function (_elm) {
+   "use strict";
+   _elm.Char = _elm.Char || {};
+   if (_elm.Char.values) return _elm.Char.values;
+   var _U = Elm.Native.Utils.make(_elm),$Basics = Elm.Basics.make(_elm),$Native$Char = Elm.Native.Char.make(_elm);
+   var _op = {};
+   var fromCode = $Native$Char.fromCode;
+   var toCode = $Native$Char.toCode;
+   var toLocaleLower = $Native$Char.toLocaleLower;
+   var toLocaleUpper = $Native$Char.toLocaleUpper;
+   var toLower = $Native$Char.toLower;
+   var toUpper = $Native$Char.toUpper;
+   var isBetween = F3(function (low,high,$char) {    var code = toCode($char);return _U.cmp(code,toCode(low)) > -1 && _U.cmp(code,toCode(high)) < 1;});
+   var isUpper = A2(isBetween,_U.chr("A"),_U.chr("Z"));
+   var isLower = A2(isBetween,_U.chr("a"),_U.chr("z"));
+   var isDigit = A2(isBetween,_U.chr("0"),_U.chr("9"));
+   var isOctDigit = A2(isBetween,_U.chr("0"),_U.chr("7"));
+   var isHexDigit = function ($char) {
+      return isDigit($char) || (A3(isBetween,_U.chr("a"),_U.chr("f"),$char) || A3(isBetween,_U.chr("A"),_U.chr("F"),$char));
+   };
+   return _elm.Char.values = {_op: _op
+                             ,isUpper: isUpper
+                             ,isLower: isLower
+                             ,isDigit: isDigit
+                             ,isOctDigit: isOctDigit
+                             ,isHexDigit: isHexDigit
+                             ,toUpper: toUpper
+                             ,toLower: toLower
+                             ,toLocaleUpper: toLocaleUpper
+                             ,toLocaleLower: toLocaleLower
+                             ,toCode: toCode
+                             ,fromCode: fromCode};
+};
+Elm.String = Elm.String || {};
+Elm.String.make = function (_elm) {
+   "use strict";
+   _elm.String = _elm.String || {};
+   if (_elm.String.values) return _elm.String.values;
+   var _U = Elm.Native.Utils.make(_elm),$Maybe = Elm.Maybe.make(_elm),$Native$String = Elm.Native.String.make(_elm),$Result = Elm.Result.make(_elm);
+   var _op = {};
+   var fromList = $Native$String.fromList;
+   var toList = $Native$String.toList;
+   var toFloat = $Native$String.toFloat;
+   var toInt = $Native$String.toInt;
+   var indices = $Native$String.indexes;
+   var indexes = $Native$String.indexes;
+   var endsWith = $Native$String.endsWith;
+   var startsWith = $Native$String.startsWith;
+   var contains = $Native$String.contains;
+   var all = $Native$String.all;
+   var any = $Native$String.any;
+   var toLower = $Native$String.toLower;
+   var toUpper = $Native$String.toUpper;
+   var lines = $Native$String.lines;
+   var words = $Native$String.words;
+   var trimRight = $Native$String.trimRight;
+   var trimLeft = $Native$String.trimLeft;
+   var trim = $Native$String.trim;
+   var padRight = $Native$String.padRight;
+   var padLeft = $Native$String.padLeft;
+   var pad = $Native$String.pad;
+   var dropRight = $Native$String.dropRight;
+   var dropLeft = $Native$String.dropLeft;
+   var right = $Native$String.right;
+   var left = $Native$String.left;
+   var slice = $Native$String.slice;
+   var repeat = $Native$String.repeat;
+   var join = $Native$String.join;
+   var split = $Native$String.split;
+   var foldr = $Native$String.foldr;
+   var foldl = $Native$String.foldl;
+   var reverse = $Native$String.reverse;
+   var filter = $Native$String.filter;
+   var map = $Native$String.map;
+   var length = $Native$String.length;
+   var concat = $Native$String.concat;
+   var append = $Native$String.append;
+   var uncons = $Native$String.uncons;
+   var cons = $Native$String.cons;
+   var fromChar = function ($char) {    return A2(cons,$char,"");};
+   var isEmpty = $Native$String.isEmpty;
+   return _elm.String.values = {_op: _op
+                               ,isEmpty: isEmpty
+                               ,length: length
+                               ,reverse: reverse
+                               ,repeat: repeat
+                               ,cons: cons
+                               ,uncons: uncons
+                               ,fromChar: fromChar
+                               ,append: append
+                               ,concat: concat
+                               ,split: split
+                               ,join: join
+                               ,words: words
+                               ,lines: lines
+                               ,slice: slice
+                               ,left: left
+                               ,right: right
+                               ,dropLeft: dropLeft
+                               ,dropRight: dropRight
+                               ,contains: contains
+                               ,startsWith: startsWith
+                               ,endsWith: endsWith
+                               ,indexes: indexes
+                               ,indices: indices
+                               ,toInt: toInt
+                               ,toFloat: toFloat
+                               ,toList: toList
+                               ,fromList: fromList
+                               ,toUpper: toUpper
+                               ,toLower: toLower
+                               ,pad: pad
+                               ,padLeft: padLeft
+                               ,padRight: padRight
+                               ,trim: trim
+                               ,trimLeft: trimLeft
+                               ,trimRight: trimRight
+                               ,map: map
+                               ,filter: filter
+                               ,foldl: foldl
+                               ,foldr: foldr
+                               ,any: any
+                               ,all: all};
+};
+Elm.Dict = Elm.Dict || {};
+Elm.Dict.make = function (_elm) {
+   "use strict";
+   _elm.Dict = _elm.Dict || {};
+   if (_elm.Dict.values) return _elm.Dict.values;
+   var _U = Elm.Native.Utils.make(_elm),
+   $Basics = Elm.Basics.make(_elm),
+   $List = Elm.List.make(_elm),
+   $Maybe = Elm.Maybe.make(_elm),
+   $Native$Debug = Elm.Native.Debug.make(_elm),
+   $String = Elm.String.make(_elm);
+   var _op = {};
+   var foldr = F3(function (f,acc,t) {
+      foldr: while (true) {
+         var _p0 = t;
+         if (_p0.ctor === "RBEmpty_elm_builtin") {
+               return acc;
+            } else {
+               var _v1 = f,_v2 = A3(f,_p0._1,_p0._2,A3(foldr,f,acc,_p0._4)),_v3 = _p0._3;
+               f = _v1;
+               acc = _v2;
+               t = _v3;
+               continue foldr;
+            }
+      }
+   });
+   var keys = function (dict) {    return A3(foldr,F3(function (key,value,keyList) {    return A2($List._op["::"],key,keyList);}),_U.list([]),dict);};
+   var values = function (dict) {    return A3(foldr,F3(function (key,value,valueList) {    return A2($List._op["::"],value,valueList);}),_U.list([]),dict);};
+   var toList = function (dict) {
+      return A3(foldr,F3(function (key,value,list) {    return A2($List._op["::"],{ctor: "_Tuple2",_0: key,_1: value},list);}),_U.list([]),dict);
+   };
+   var foldl = F3(function (f,acc,dict) {
+      foldl: while (true) {
+         var _p1 = dict;
+         if (_p1.ctor === "RBEmpty_elm_builtin") {
+               return acc;
+            } else {
+               var _v5 = f,_v6 = A3(f,_p1._1,_p1._2,A3(foldl,f,acc,_p1._3)),_v7 = _p1._4;
+               f = _v5;
+               acc = _v6;
+               dict = _v7;
+               continue foldl;
+            }
+      }
+   });
+   var reportRemBug = F4(function (msg,c,lgot,rgot) {
+      return $Native$Debug.crash($String.concat(_U.list(["Internal red-black tree invariant violated, expected "
+                                                        ,msg
+                                                        ," and got "
+                                                        ,$Basics.toString(c)
+                                                        ,"/"
+                                                        ,lgot
+                                                        ,"/"
+                                                        ,rgot
+                                                        ,"\nPlease report this bug to <https://github.com/elm-lang/core/issues>"])));
+   });
+   var isBBlack = function (dict) {
+      var _p2 = dict;
+      _v8_2: do {
+         if (_p2.ctor === "RBNode_elm_builtin") {
+               if (_p2._0.ctor === "BBlack") {
+                     return true;
+                  } else {
+                     break _v8_2;
+                  }
+            } else {
+               if (_p2._0.ctor === "LBBlack") {
+                     return true;
+                  } else {
+                     break _v8_2;
+                  }
+            }
+      } while (false);
+      return false;
+   };
+   var Same = {ctor: "Same"};
+   var Remove = {ctor: "Remove"};
+   var Insert = {ctor: "Insert"};
+   var sizeHelp = F2(function (n,dict) {
+      sizeHelp: while (true) {
+         var _p3 = dict;
+         if (_p3.ctor === "RBEmpty_elm_builtin") {
+               return n;
+            } else {
+               var _v10 = A2(sizeHelp,n + 1,_p3._4),_v11 = _p3._3;
+               n = _v10;
+               dict = _v11;
+               continue sizeHelp;
+            }
+      }
+   });
+   var size = function (dict) {    return A2(sizeHelp,0,dict);};
+   var get = F2(function (targetKey,dict) {
+      get: while (true) {
+         var _p4 = dict;
+         if (_p4.ctor === "RBEmpty_elm_builtin") {
+               return $Maybe.Nothing;
+            } else {
+               var _p5 = A2($Basics.compare,targetKey,_p4._1);
+               switch (_p5.ctor)
+               {case "LT": var _v14 = targetKey,_v15 = _p4._3;
+                    targetKey = _v14;
+                    dict = _v15;
+                    continue get;
+                  case "EQ": return $Maybe.Just(_p4._2);
+                  default: var _v16 = targetKey,_v17 = _p4._4;
+                    targetKey = _v16;
+                    dict = _v17;
+                    continue get;}
+            }
+      }
+   });
+   var member = F2(function (key,dict) {    var _p6 = A2(get,key,dict);if (_p6.ctor === "Just") {    return true;} else {    return false;}});
+   var maxWithDefault = F3(function (k,v,r) {
+      maxWithDefault: while (true) {
+         var _p7 = r;
+         if (_p7.ctor === "RBEmpty_elm_builtin") {
+               return {ctor: "_Tuple2",_0: k,_1: v};
+            } else {
+               var _v20 = _p7._1,_v21 = _p7._2,_v22 = _p7._4;
+               k = _v20;
+               v = _v21;
+               r = _v22;
+               continue maxWithDefault;
+            }
+      }
+   });
+   var RBEmpty_elm_builtin = function (a) {    return {ctor: "RBEmpty_elm_builtin",_0: a};};
+   var RBNode_elm_builtin = F5(function (a,b,c,d,e) {    return {ctor: "RBNode_elm_builtin",_0: a,_1: b,_2: c,_3: d,_4: e};});
+   var LBBlack = {ctor: "LBBlack"};
+   var LBlack = {ctor: "LBlack"};
+   var empty = RBEmpty_elm_builtin(LBlack);
+   var isEmpty = function (dict) {    return _U.eq(dict,empty);};
+   var map = F2(function (f,dict) {
+      var _p8 = dict;
+      if (_p8.ctor === "RBEmpty_elm_builtin") {
+            return RBEmpty_elm_builtin(LBlack);
+         } else {
+            var _p9 = _p8._1;
+            return A5(RBNode_elm_builtin,_p8._0,_p9,A2(f,_p9,_p8._2),A2(map,f,_p8._3),A2(map,f,_p8._4));
+         }
+   });
+   var NBlack = {ctor: "NBlack"};
+   var BBlack = {ctor: "BBlack"};
+   var Black = {ctor: "Black"};
+   var ensureBlackRoot = function (dict) {
+      var _p10 = dict;
+      if (_p10.ctor === "RBNode_elm_builtin" && _p10._0.ctor === "Red") {
+            return A5(RBNode_elm_builtin,Black,_p10._1,_p10._2,_p10._3,_p10._4);
+         } else {
+            return dict;
+         }
+   };
+   var blackish = function (t) {
+      var _p11 = t;
+      if (_p11.ctor === "RBNode_elm_builtin") {
+            var _p12 = _p11._0;
+            return _U.eq(_p12,Black) || _U.eq(_p12,BBlack);
+         } else {
+            return true;
+         }
+   };
+   var blacken = function (t) {
+      var _p13 = t;
+      if (_p13.ctor === "RBEmpty_elm_builtin") {
+            return RBEmpty_elm_builtin(LBlack);
+         } else {
+            return A5(RBNode_elm_builtin,Black,_p13._1,_p13._2,_p13._3,_p13._4);
+         }
+   };
+   var Red = {ctor: "Red"};
+   var moreBlack = function (color) {
+      var _p14 = color;
+      switch (_p14.ctor)
+      {case "Black": return BBlack;
+         case "Red": return Black;
+         case "NBlack": return Red;
+         default: return $Native$Debug.crash("Can\'t make a double black node more black!");}
+   };
+   var lessBlack = function (color) {
+      var _p15 = color;
+      switch (_p15.ctor)
+      {case "BBlack": return Black;
+         case "Black": return Red;
+         case "Red": return NBlack;
+         default: return $Native$Debug.crash("Can\'t make a negative black node less black!");}
+   };
+   var lessBlackTree = function (dict) {
+      var _p16 = dict;
+      if (_p16.ctor === "RBNode_elm_builtin") {
+            return A5(RBNode_elm_builtin,lessBlack(_p16._0),_p16._1,_p16._2,_p16._3,_p16._4);
+         } else {
+            return RBEmpty_elm_builtin(LBlack);
+         }
+   };
+   var balancedTree = function (col) {
+      return function (xk) {
+         return function (xv) {
+            return function (yk) {
+               return function (yv) {
+                  return function (zk) {
+                     return function (zv) {
+                        return function (a) {
+                           return function (b) {
+                              return function (c) {
+                                 return function (d) {
+                                    return A5(RBNode_elm_builtin,
+                                    lessBlack(col),
+                                    yk,
+                                    yv,
+                                    A5(RBNode_elm_builtin,Black,xk,xv,a,b),
+                                    A5(RBNode_elm_builtin,Black,zk,zv,c,d));
+                                 };
+                              };
+                           };
+                        };
+                     };
+                  };
+               };
+            };
+         };
+      };
+   };
+   var redden = function (t) {
+      var _p17 = t;
+      if (_p17.ctor === "RBEmpty_elm_builtin") {
+            return $Native$Debug.crash("can\'t make a Leaf red");
+         } else {
+            return A5(RBNode_elm_builtin,Red,_p17._1,_p17._2,_p17._3,_p17._4);
+         }
+   };
+   var balanceHelp = function (tree) {
+      var _p18 = tree;
+      _v31_6: do {
+         _v31_5: do {
+            _v31_4: do {
+               _v31_3: do {
+                  _v31_2: do {
+                     _v31_1: do {
+                        _v31_0: do {
+                           if (_p18.ctor === "RBNode_elm_builtin") {
+                                 if (_p18._3.ctor === "RBNode_elm_builtin") {
+                                       if (_p18._4.ctor === "RBNode_elm_builtin") {
+                                             switch (_p18._3._0.ctor)
+                                             {case "Red": switch (_p18._4._0.ctor)
+                                                  {case "Red": if (_p18._3._3.ctor === "RBNode_elm_builtin" && _p18._3._3._0.ctor === "Red") {
+                                                             break _v31_0;
+                                                          } else {
+                                                             if (_p18._3._4.ctor === "RBNode_elm_builtin" && _p18._3._4._0.ctor === "Red") {
+                                                                   break _v31_1;
+                                                                } else {
+                                                                   if (_p18._4._3.ctor === "RBNode_elm_builtin" && _p18._4._3._0.ctor === "Red") {
+                                                                         break _v31_2;
+                                                                      } else {
+                                                                         if (_p18._4._4.ctor === "RBNode_elm_builtin" && _p18._4._4._0.ctor === "Red") {
+                                                                               break _v31_3;
+                                                                            } else {
+                                                                               break _v31_6;
+                                                                            }
+                                                                      }
+                                                                }
+                                                          }
+                                                     case "NBlack": if (_p18._3._3.ctor === "RBNode_elm_builtin" && _p18._3._3._0.ctor === "Red") {
+                                                             break _v31_0;
+                                                          } else {
+                                                             if (_p18._3._4.ctor === "RBNode_elm_builtin" && _p18._3._4._0.ctor === "Red") {
+                                                                   break _v31_1;
+                                                                } else {
+                                                                   if (_p18._0.ctor === "BBlack" && _p18._4._3.ctor === "RBNode_elm_builtin" && _p18._4._3._0.ctor === "Black" && _p18._4._4.ctor === "RBNode_elm_builtin" && _p18._4._4._0.ctor === "Black")
+                                                                   {
+                                                                         break _v31_4;
+                                                                      } else {
+                                                                         break _v31_6;
+                                                                      }
+                                                                }
+                                                          }
+                                                     default: if (_p18._3._3.ctor === "RBNode_elm_builtin" && _p18._3._3._0.ctor === "Red") {
+                                                             break _v31_0;
+                                                          } else {
+                                                             if (_p18._3._4.ctor === "RBNode_elm_builtin" && _p18._3._4._0.ctor === "Red") {
+                                                                   break _v31_1;
+                                                                } else {
+                                                                   break _v31_6;
+                                                                }
+                                                          }}
+                                                case "NBlack": switch (_p18._4._0.ctor)
+                                                  {case "Red": if (_p18._4._3.ctor === "RBNode_elm_builtin" && _p18._4._3._0.ctor === "Red") {
+                                                             break _v31_2;
+                                                          } else {
+                                                             if (_p18._4._4.ctor === "RBNode_elm_builtin" && _p18._4._4._0.ctor === "Red") {
+                                                                   break _v31_3;
+                                                                } else {
+                                                                   if (_p18._0.ctor === "BBlack" && _p18._3._3.ctor === "RBNode_elm_builtin" && _p18._3._3._0.ctor === "Black" && _p18._3._4.ctor === "RBNode_elm_builtin" && _p18._3._4._0.ctor === "Black")
+                                                                   {
+                                                                         break _v31_5;
+                                                                      } else {
+                                                                         break _v31_6;
+                                                                      }
+                                                                }
+                                                          }
+                                                     case "NBlack": if (_p18._0.ctor === "BBlack") {
+                                                             if (_p18._4._3.ctor === "RBNode_elm_builtin" && _p18._4._3._0.ctor === "Black" && _p18._4._4.ctor === "RBNode_elm_builtin" && _p18._4._4._0.ctor === "Black")
+                                                             {
+                                                                   break _v31_4;
+                                                                } else {
+                                                                   if (_p18._3._3.ctor === "RBNode_elm_builtin" && _p18._3._3._0.ctor === "Black" && _p18._3._4.ctor === "RBNode_elm_builtin" && _p18._3._4._0.ctor === "Black")
+                                                                   {
+                                                                         break _v31_5;
+                                                                      } else {
+                                                                         break _v31_6;
+                                                                      }
+                                                                }
+                                                          } else {
+                                                             break _v31_6;
+                                                          }
+                                                     default:
+                                                     if (_p18._0.ctor === "BBlack" && _p18._3._3.ctor === "RBNode_elm_builtin" && _p18._3._3._0.ctor === "Black" && _p18._3._4.ctor === "RBNode_elm_builtin" && _p18._3._4._0.ctor === "Black")
+                                                       {
+                                                             break _v31_5;
+                                                          } else {
+                                                             break _v31_6;
+                                                          }}
+                                                default: switch (_p18._4._0.ctor)
+                                                  {case "Red": if (_p18._4._3.ctor === "RBNode_elm_builtin" && _p18._4._3._0.ctor === "Red") {
+                                                             break _v31_2;
+                                                          } else {
+                                                             if (_p18._4._4.ctor === "RBNode_elm_builtin" && _p18._4._4._0.ctor === "Red") {
+                                                                   break _v31_3;
+                                                                } else {
+                                                                   break _v31_6;
+                                                                }
+                                                          }
+                                                     case "NBlack":
+                                                     if (_p18._0.ctor === "BBlack" && _p18._4._3.ctor === "RBNode_elm_builtin" && _p18._4._3._0.ctor === "Black" && _p18._4._4.ctor === "RBNode_elm_builtin" && _p18._4._4._0.ctor === "Black")
+                                                       {
+                                                             break _v31_4;
+                                                          } else {
+                                                             break _v31_6;
+                                                          }
+                                                     default: break _v31_6;}}
+                                          } else {
+                                             switch (_p18._3._0.ctor)
+                                             {case "Red": if (_p18._3._3.ctor === "RBNode_elm_builtin" && _p18._3._3._0.ctor === "Red") {
+                                                        break _v31_0;
+                                                     } else {
+                                                        if (_p18._3._4.ctor === "RBNode_elm_builtin" && _p18._3._4._0.ctor === "Red") {
+                                                              break _v31_1;
+                                                           } else {
+                                                              break _v31_6;
+                                                           }
+                                                     }
+                                                case "NBlack":
+                                                if (_p18._0.ctor === "BBlack" && _p18._3._3.ctor === "RBNode_elm_builtin" && _p18._3._3._0.ctor === "Black" && _p18._3._4.ctor === "RBNode_elm_builtin" && _p18._3._4._0.ctor === "Black")
+                                                  {
+                                                        break _v31_5;
+                                                     } else {
+                                                        break _v31_6;
+                                                     }
+                                                default: break _v31_6;}
+                                          }
+                                    } else {
+                                       if (_p18._4.ctor === "RBNode_elm_builtin") {
+                                             switch (_p18._4._0.ctor)
+                                             {case "Red": if (_p18._4._3.ctor === "RBNode_elm_builtin" && _p18._4._3._0.ctor === "Red") {
+                                                        break _v31_2;
+                                                     } else {
+                                                        if (_p18._4._4.ctor === "RBNode_elm_builtin" && _p18._4._4._0.ctor === "Red") {
+                                                              break _v31_3;
+                                                           } else {
+                                                              break _v31_6;
+                                                           }
+                                                     }
+                                                case "NBlack":
+                                                if (_p18._0.ctor === "BBlack" && _p18._4._3.ctor === "RBNode_elm_builtin" && _p18._4._3._0.ctor === "Black" && _p18._4._4.ctor === "RBNode_elm_builtin" && _p18._4._4._0.ctor === "Black")
+                                                  {
+                                                        break _v31_4;
+                                                     } else {
+                                                        break _v31_6;
+                                                     }
+                                                default: break _v31_6;}
+                                          } else {
+                                             break _v31_6;
+                                          }
+                                    }
+                              } else {
+                                 break _v31_6;
+                              }
+                        } while (false);
+                        return balancedTree(_p18._0)(_p18._3._3._1)(_p18._3._3._2)(_p18._3._1)(_p18._3._2)(_p18._1)(_p18._2)(_p18._3._3._3)(_p18._3._3._4)(_p18._3._4)(_p18._4);
+                     } while (false);
+                     return balancedTree(_p18._0)(_p18._3._1)(_p18._3._2)(_p18._3._4._1)(_p18._3._4._2)(_p18._1)(_p18._2)(_p18._3._3)(_p18._3._4._3)(_p18._3._4._4)(_p18._4);
+                  } while (false);
+                  return balancedTree(_p18._0)(_p18._1)(_p18._2)(_p18._4._3._1)(_p18._4._3._2)(_p18._4._1)(_p18._4._2)(_p18._3)(_p18._4._3._3)(_p18._4._3._4)(_p18._4._4);
+               } while (false);
+               return balancedTree(_p18._0)(_p18._1)(_p18._2)(_p18._4._1)(_p18._4._2)(_p18._4._4._1)(_p18._4._4._2)(_p18._3)(_p18._4._3)(_p18._4._4._3)(_p18._4._4._4);
+            } while (false);
+            return A5(RBNode_elm_builtin,
+            Black,
+            _p18._4._3._1,
+            _p18._4._3._2,
+            A5(RBNode_elm_builtin,Black,_p18._1,_p18._2,_p18._3,_p18._4._3._3),
+            A5(balance,Black,_p18._4._1,_p18._4._2,_p18._4._3._4,redden(_p18._4._4)));
+         } while (false);
+         return A5(RBNode_elm_builtin,
+         Black,
+         _p18._3._4._1,
+         _p18._3._4._2,
+         A5(balance,Black,_p18._3._1,_p18._3._2,redden(_p18._3._3),_p18._3._4._3),
+         A5(RBNode_elm_builtin,Black,_p18._1,_p18._2,_p18._3._4._4,_p18._4));
+      } while (false);
+      return tree;
+   };
+   var balance = F5(function (c,k,v,l,r) {    var tree = A5(RBNode_elm_builtin,c,k,v,l,r);return blackish(tree) ? balanceHelp(tree) : tree;});
+   var bubble = F5(function (c,k,v,l,r) {
+      return isBBlack(l) || isBBlack(r) ? A5(balance,moreBlack(c),k,v,lessBlackTree(l),lessBlackTree(r)) : A5(RBNode_elm_builtin,c,k,v,l,r);
+   });
+   var removeMax = F5(function (c,k,v,l,r) {
+      var _p19 = r;
+      if (_p19.ctor === "RBEmpty_elm_builtin") {
+            return A3(rem,c,l,r);
+         } else {
+            return A5(bubble,c,k,v,l,A5(removeMax,_p19._0,_p19._1,_p19._2,_p19._3,_p19._4));
+         }
+   });
+   var rem = F3(function (c,l,r) {
+      var _p20 = {ctor: "_Tuple2",_0: l,_1: r};
+      if (_p20._0.ctor === "RBEmpty_elm_builtin") {
+            if (_p20._1.ctor === "RBEmpty_elm_builtin") {
+                  var _p21 = c;
+                  switch (_p21.ctor)
+                  {case "Red": return RBEmpty_elm_builtin(LBlack);
+                     case "Black": return RBEmpty_elm_builtin(LBBlack);
+                     default: return $Native$Debug.crash("cannot have bblack or nblack nodes at this point");}
+               } else {
+                  var _p24 = _p20._1._0;
+                  var _p23 = _p20._0._0;
+                  var _p22 = {ctor: "_Tuple3",_0: c,_1: _p23,_2: _p24};
+                  if (_p22.ctor === "_Tuple3" && _p22._0.ctor === "Black" && _p22._1.ctor === "LBlack" && _p22._2.ctor === "Red") {
+                        return A5(RBNode_elm_builtin,Black,_p20._1._1,_p20._1._2,_p20._1._3,_p20._1._4);
+                     } else {
+                        return A4(reportRemBug,"Black/LBlack/Red",c,$Basics.toString(_p23),$Basics.toString(_p24));
+                     }
+               }
+         } else {
+            if (_p20._1.ctor === "RBEmpty_elm_builtin") {
+                  var _p27 = _p20._1._0;
+                  var _p26 = _p20._0._0;
+                  var _p25 = {ctor: "_Tuple3",_0: c,_1: _p26,_2: _p27};
+                  if (_p25.ctor === "_Tuple3" && _p25._0.ctor === "Black" && _p25._1.ctor === "Red" && _p25._2.ctor === "LBlack") {
+                        return A5(RBNode_elm_builtin,Black,_p20._0._1,_p20._0._2,_p20._0._3,_p20._0._4);
+                     } else {
+                        return A4(reportRemBug,"Black/Red/LBlack",c,$Basics.toString(_p26),$Basics.toString(_p27));
+                     }
+               } else {
+                  var _p31 = _p20._0._2;
+                  var _p30 = _p20._0._4;
+                  var _p29 = _p20._0._1;
+                  var l$ = A5(removeMax,_p20._0._0,_p29,_p31,_p20._0._3,_p30);
+                  var _p28 = A3(maxWithDefault,_p29,_p31,_p30);
+                  var k = _p28._0;
+                  var v = _p28._1;
+                  return A5(bubble,c,k,v,l$,r);
+               }
+         }
+   });
+   var update = F3(function (k,alter,dict) {
+      var up = function (dict) {
+         var _p32 = dict;
+         if (_p32.ctor === "RBEmpty_elm_builtin") {
+               var _p33 = alter($Maybe.Nothing);
+               if (_p33.ctor === "Nothing") {
+                     return {ctor: "_Tuple2",_0: Same,_1: empty};
+                  } else {
+                     return {ctor: "_Tuple2",_0: Insert,_1: A5(RBNode_elm_builtin,Red,k,_p33._0,empty,empty)};
+                  }
+            } else {
+               var _p44 = _p32._2;
+               var _p43 = _p32._4;
+               var _p42 = _p32._3;
+               var _p41 = _p32._1;
+               var _p40 = _p32._0;
+               var _p34 = A2($Basics.compare,k,_p41);
+               switch (_p34.ctor)
+               {case "EQ": var _p35 = alter($Maybe.Just(_p44));
+                    if (_p35.ctor === "Nothing") {
+                          return {ctor: "_Tuple2",_0: Remove,_1: A3(rem,_p40,_p42,_p43)};
+                       } else {
+                          return {ctor: "_Tuple2",_0: Same,_1: A5(RBNode_elm_builtin,_p40,_p41,_p35._0,_p42,_p43)};
+                       }
+                  case "LT": var _p36 = up(_p42);
+                    var flag = _p36._0;
+                    var newLeft = _p36._1;
+                    var _p37 = flag;
+                    switch (_p37.ctor)
+                    {case "Same": return {ctor: "_Tuple2",_0: Same,_1: A5(RBNode_elm_builtin,_p40,_p41,_p44,newLeft,_p43)};
+                       case "Insert": return {ctor: "_Tuple2",_0: Insert,_1: A5(balance,_p40,_p41,_p44,newLeft,_p43)};
+                       default: return {ctor: "_Tuple2",_0: Remove,_1: A5(bubble,_p40,_p41,_p44,newLeft,_p43)};}
+                  default: var _p38 = up(_p43);
+                    var flag = _p38._0;
+                    var newRight = _p38._1;
+                    var _p39 = flag;
+                    switch (_p39.ctor)
+                    {case "Same": return {ctor: "_Tuple2",_0: Same,_1: A5(RBNode_elm_builtin,_p40,_p41,_p44,_p42,newRight)};
+                       case "Insert": return {ctor: "_Tuple2",_0: Insert,_1: A5(balance,_p40,_p41,_p44,_p42,newRight)};
+                       default: return {ctor: "_Tuple2",_0: Remove,_1: A5(bubble,_p40,_p41,_p44,_p42,newRight)};}}
+            }
+      };
+      var _p45 = up(dict);
+      var flag = _p45._0;
+      var updatedDict = _p45._1;
+      var _p46 = flag;
+      switch (_p46.ctor)
+      {case "Same": return updatedDict;
+         case "Insert": return ensureBlackRoot(updatedDict);
+         default: return blacken(updatedDict);}
+   });
+   var insert = F3(function (key,value,dict) {    return A3(update,key,$Basics.always($Maybe.Just(value)),dict);});
+   var singleton = F2(function (key,value) {    return A3(insert,key,value,empty);});
+   var union = F2(function (t1,t2) {    return A3(foldl,insert,t2,t1);});
+   var fromList = function (assocs) {
+      return A3($List.foldl,F2(function (_p47,dict) {    var _p48 = _p47;return A3(insert,_p48._0,_p48._1,dict);}),empty,assocs);
+   };
+   var filter = F2(function (predicate,dictionary) {
+      var add = F3(function (key,value,dict) {    return A2(predicate,key,value) ? A3(insert,key,value,dict) : dict;});
+      return A3(foldl,add,empty,dictionary);
+   });
+   var intersect = F2(function (t1,t2) {    return A2(filter,F2(function (k,_p49) {    return A2(member,k,t2);}),t1);});
+   var partition = F2(function (predicate,dict) {
+      var add = F3(function (key,value,_p50) {
+         var _p51 = _p50;
+         var _p53 = _p51._1;
+         var _p52 = _p51._0;
+         return A2(predicate,key,value) ? {ctor: "_Tuple2",_0: A3(insert,key,value,_p52),_1: _p53} : {ctor: "_Tuple2",_0: _p52,_1: A3(insert,key,value,_p53)};
+      });
+      return A3(foldl,add,{ctor: "_Tuple2",_0: empty,_1: empty},dict);
+   });
+   var remove = F2(function (key,dict) {    return A3(update,key,$Basics.always($Maybe.Nothing),dict);});
+   var diff = F2(function (t1,t2) {    return A3(foldl,F3(function (k,v,t) {    return A2(remove,k,t);}),t1,t2);});
+   return _elm.Dict.values = {_op: _op
+                             ,empty: empty
+                             ,singleton: singleton
+                             ,insert: insert
+                             ,update: update
+                             ,isEmpty: isEmpty
+                             ,get: get
+                             ,remove: remove
+                             ,member: member
+                             ,size: size
+                             ,filter: filter
+                             ,partition: partition
+                             ,foldl: foldl
+                             ,foldr: foldr
+                             ,map: map
+                             ,union: union
+                             ,intersect: intersect
+                             ,diff: diff
+                             ,keys: keys
+                             ,values: values
+                             ,toList: toList
+                             ,fromList: fromList};
+};
 Elm.Native.Json = {};
 
 Elm.Native.Json.make = function(localRuntime) {
@@ -7311,1055 +8360,6 @@ Elm.Array.make = function (_elm) {
                               ,foldl: foldl
                               ,foldr: foldr};
 };
-Elm.Native.String = {};
-
-Elm.Native.String.make = function(localRuntime) {
-	localRuntime.Native = localRuntime.Native || {};
-	localRuntime.Native.String = localRuntime.Native.String || {};
-	if (localRuntime.Native.String.values)
-	{
-		return localRuntime.Native.String.values;
-	}
-	if ('values' in Elm.Native.String)
-	{
-		return localRuntime.Native.String.values = Elm.Native.String.values;
-	}
-
-
-	var Char = Elm.Char.make(localRuntime);
-	var List = Elm.Native.List.make(localRuntime);
-	var Maybe = Elm.Maybe.make(localRuntime);
-	var Result = Elm.Result.make(localRuntime);
-	var Utils = Elm.Native.Utils.make(localRuntime);
-
-	function isEmpty(str)
-	{
-		return str.length === 0;
-	}
-	function cons(chr, str)
-	{
-		return chr + str;
-	}
-	function uncons(str)
-	{
-		var hd = str[0];
-		if (hd)
-		{
-			return Maybe.Just(Utils.Tuple2(Utils.chr(hd), str.slice(1)));
-		}
-		return Maybe.Nothing;
-	}
-	function append(a, b)
-	{
-		return a + b;
-	}
-	function concat(strs)
-	{
-		return List.toArray(strs).join('');
-	}
-	function length(str)
-	{
-		return str.length;
-	}
-	function map(f, str)
-	{
-		var out = str.split('');
-		for (var i = out.length; i--; )
-		{
-			out[i] = f(Utils.chr(out[i]));
-		}
-		return out.join('');
-	}
-	function filter(pred, str)
-	{
-		return str.split('').map(Utils.chr).filter(pred).join('');
-	}
-	function reverse(str)
-	{
-		return str.split('').reverse().join('');
-	}
-	function foldl(f, b, str)
-	{
-		var len = str.length;
-		for (var i = 0; i < len; ++i)
-		{
-			b = A2(f, Utils.chr(str[i]), b);
-		}
-		return b;
-	}
-	function foldr(f, b, str)
-	{
-		for (var i = str.length; i--; )
-		{
-			b = A2(f, Utils.chr(str[i]), b);
-		}
-		return b;
-	}
-	function split(sep, str)
-	{
-		return List.fromArray(str.split(sep));
-	}
-	function join(sep, strs)
-	{
-		return List.toArray(strs).join(sep);
-	}
-	function repeat(n, str)
-	{
-		var result = '';
-		while (n > 0)
-		{
-			if (n & 1)
-			{
-				result += str;
-			}
-			n >>= 1, str += str;
-		}
-		return result;
-	}
-	function slice(start, end, str)
-	{
-		return str.slice(start, end);
-	}
-	function left(n, str)
-	{
-		return n < 1 ? '' : str.slice(0, n);
-	}
-	function right(n, str)
-	{
-		return n < 1 ? '' : str.slice(-n);
-	}
-	function dropLeft(n, str)
-	{
-		return n < 1 ? str : str.slice(n);
-	}
-	function dropRight(n, str)
-	{
-		return n < 1 ? str : str.slice(0, -n);
-	}
-	function pad(n, chr, str)
-	{
-		var half = (n - str.length) / 2;
-		return repeat(Math.ceil(half), chr) + str + repeat(half | 0, chr);
-	}
-	function padRight(n, chr, str)
-	{
-		return str + repeat(n - str.length, chr);
-	}
-	function padLeft(n, chr, str)
-	{
-		return repeat(n - str.length, chr) + str;
-	}
-
-	function trim(str)
-	{
-		return str.trim();
-	}
-	function trimLeft(str)
-	{
-		return str.replace(/^\s+/, '');
-	}
-	function trimRight(str)
-	{
-		return str.replace(/\s+$/, '');
-	}
-
-	function words(str)
-	{
-		return List.fromArray(str.trim().split(/\s+/g));
-	}
-	function lines(str)
-	{
-		return List.fromArray(str.split(/\r\n|\r|\n/g));
-	}
-
-	function toUpper(str)
-	{
-		return str.toUpperCase();
-	}
-	function toLower(str)
-	{
-		return str.toLowerCase();
-	}
-
-	function any(pred, str)
-	{
-		for (var i = str.length; i--; )
-		{
-			if (pred(Utils.chr(str[i])))
-			{
-				return true;
-			}
-		}
-		return false;
-	}
-	function all(pred, str)
-	{
-		for (var i = str.length; i--; )
-		{
-			if (!pred(Utils.chr(str[i])))
-			{
-				return false;
-			}
-		}
-		return true;
-	}
-
-	function contains(sub, str)
-	{
-		return str.indexOf(sub) > -1;
-	}
-	function startsWith(sub, str)
-	{
-		return str.indexOf(sub) === 0;
-	}
-	function endsWith(sub, str)
-	{
-		return str.length >= sub.length &&
-			str.lastIndexOf(sub) === str.length - sub.length;
-	}
-	function indexes(sub, str)
-	{
-		var subLen = sub.length;
-		var i = 0;
-		var is = [];
-		while ((i = str.indexOf(sub, i)) > -1)
-		{
-			is.push(i);
-			i = i + subLen;
-		}
-		return List.fromArray(is);
-	}
-
-	function toInt(s)
-	{
-		var len = s.length;
-		if (len === 0)
-		{
-			return Result.Err("could not convert string '" + s + "' to an Int" );
-		}
-		var start = 0;
-		if (s[0] === '-')
-		{
-			if (len === 1)
-			{
-				return Result.Err("could not convert string '" + s + "' to an Int" );
-			}
-			start = 1;
-		}
-		for (var i = start; i < len; ++i)
-		{
-			if (!Char.isDigit(s[i]))
-			{
-				return Result.Err("could not convert string '" + s + "' to an Int" );
-			}
-		}
-		return Result.Ok(parseInt(s, 10));
-	}
-
-	function toFloat(s)
-	{
-		var len = s.length;
-		if (len === 0)
-		{
-			return Result.Err("could not convert string '" + s + "' to a Float" );
-		}
-		var start = 0;
-		if (s[0] === '-')
-		{
-			if (len === 1)
-			{
-				return Result.Err("could not convert string '" + s + "' to a Float" );
-			}
-			start = 1;
-		}
-		var dotCount = 0;
-		for (var i = start; i < len; ++i)
-		{
-			if (Char.isDigit(s[i]))
-			{
-				continue;
-			}
-			if (s[i] === '.')
-			{
-				dotCount += 1;
-				if (dotCount <= 1)
-				{
-					continue;
-				}
-			}
-			return Result.Err("could not convert string '" + s + "' to a Float" );
-		}
-		return Result.Ok(parseFloat(s));
-	}
-
-	function toList(str)
-	{
-		return List.fromArray(str.split('').map(Utils.chr));
-	}
-	function fromList(chars)
-	{
-		return List.toArray(chars).join('');
-	}
-
-	return Elm.Native.String.values = {
-		isEmpty: isEmpty,
-		cons: F2(cons),
-		uncons: uncons,
-		append: F2(append),
-		concat: concat,
-		length: length,
-		map: F2(map),
-		filter: F2(filter),
-		reverse: reverse,
-		foldl: F3(foldl),
-		foldr: F3(foldr),
-
-		split: F2(split),
-		join: F2(join),
-		repeat: F2(repeat),
-
-		slice: F3(slice),
-		left: F2(left),
-		right: F2(right),
-		dropLeft: F2(dropLeft),
-		dropRight: F2(dropRight),
-
-		pad: F3(pad),
-		padLeft: F3(padLeft),
-		padRight: F3(padRight),
-
-		trim: trim,
-		trimLeft: trimLeft,
-		trimRight: trimRight,
-
-		words: words,
-		lines: lines,
-
-		toUpper: toUpper,
-		toLower: toLower,
-
-		any: F2(any),
-		all: F2(all),
-
-		contains: F2(contains),
-		startsWith: F2(startsWith),
-		endsWith: F2(endsWith),
-		indexes: F2(indexes),
-
-		toInt: toInt,
-		toFloat: toFloat,
-		toList: toList,
-		fromList: fromList
-	};
-};
-
-Elm.Native.Char = {};
-Elm.Native.Char.make = function(localRuntime) {
-	localRuntime.Native = localRuntime.Native || {};
-	localRuntime.Native.Char = localRuntime.Native.Char || {};
-	if (localRuntime.Native.Char.values)
-	{
-		return localRuntime.Native.Char.values;
-	}
-
-	var Utils = Elm.Native.Utils.make(localRuntime);
-
-	return localRuntime.Native.Char.values = {
-		fromCode: function(c) { return Utils.chr(String.fromCharCode(c)); },
-		toCode: function(c) { return c.charCodeAt(0); },
-		toUpper: function(c) { return Utils.chr(c.toUpperCase()); },
-		toLower: function(c) { return Utils.chr(c.toLowerCase()); },
-		toLocaleUpper: function(c) { return Utils.chr(c.toLocaleUpperCase()); },
-		toLocaleLower: function(c) { return Utils.chr(c.toLocaleLowerCase()); }
-	};
-};
-
-Elm.Char = Elm.Char || {};
-Elm.Char.make = function (_elm) {
-   "use strict";
-   _elm.Char = _elm.Char || {};
-   if (_elm.Char.values) return _elm.Char.values;
-   var _U = Elm.Native.Utils.make(_elm),$Basics = Elm.Basics.make(_elm),$Native$Char = Elm.Native.Char.make(_elm);
-   var _op = {};
-   var fromCode = $Native$Char.fromCode;
-   var toCode = $Native$Char.toCode;
-   var toLocaleLower = $Native$Char.toLocaleLower;
-   var toLocaleUpper = $Native$Char.toLocaleUpper;
-   var toLower = $Native$Char.toLower;
-   var toUpper = $Native$Char.toUpper;
-   var isBetween = F3(function (low,high,$char) {    var code = toCode($char);return _U.cmp(code,toCode(low)) > -1 && _U.cmp(code,toCode(high)) < 1;});
-   var isUpper = A2(isBetween,_U.chr("A"),_U.chr("Z"));
-   var isLower = A2(isBetween,_U.chr("a"),_U.chr("z"));
-   var isDigit = A2(isBetween,_U.chr("0"),_U.chr("9"));
-   var isOctDigit = A2(isBetween,_U.chr("0"),_U.chr("7"));
-   var isHexDigit = function ($char) {
-      return isDigit($char) || (A3(isBetween,_U.chr("a"),_U.chr("f"),$char) || A3(isBetween,_U.chr("A"),_U.chr("F"),$char));
-   };
-   return _elm.Char.values = {_op: _op
-                             ,isUpper: isUpper
-                             ,isLower: isLower
-                             ,isDigit: isDigit
-                             ,isOctDigit: isOctDigit
-                             ,isHexDigit: isHexDigit
-                             ,toUpper: toUpper
-                             ,toLower: toLower
-                             ,toLocaleUpper: toLocaleUpper
-                             ,toLocaleLower: toLocaleLower
-                             ,toCode: toCode
-                             ,fromCode: fromCode};
-};
-Elm.String = Elm.String || {};
-Elm.String.make = function (_elm) {
-   "use strict";
-   _elm.String = _elm.String || {};
-   if (_elm.String.values) return _elm.String.values;
-   var _U = Elm.Native.Utils.make(_elm),$Maybe = Elm.Maybe.make(_elm),$Native$String = Elm.Native.String.make(_elm),$Result = Elm.Result.make(_elm);
-   var _op = {};
-   var fromList = $Native$String.fromList;
-   var toList = $Native$String.toList;
-   var toFloat = $Native$String.toFloat;
-   var toInt = $Native$String.toInt;
-   var indices = $Native$String.indexes;
-   var indexes = $Native$String.indexes;
-   var endsWith = $Native$String.endsWith;
-   var startsWith = $Native$String.startsWith;
-   var contains = $Native$String.contains;
-   var all = $Native$String.all;
-   var any = $Native$String.any;
-   var toLower = $Native$String.toLower;
-   var toUpper = $Native$String.toUpper;
-   var lines = $Native$String.lines;
-   var words = $Native$String.words;
-   var trimRight = $Native$String.trimRight;
-   var trimLeft = $Native$String.trimLeft;
-   var trim = $Native$String.trim;
-   var padRight = $Native$String.padRight;
-   var padLeft = $Native$String.padLeft;
-   var pad = $Native$String.pad;
-   var dropRight = $Native$String.dropRight;
-   var dropLeft = $Native$String.dropLeft;
-   var right = $Native$String.right;
-   var left = $Native$String.left;
-   var slice = $Native$String.slice;
-   var repeat = $Native$String.repeat;
-   var join = $Native$String.join;
-   var split = $Native$String.split;
-   var foldr = $Native$String.foldr;
-   var foldl = $Native$String.foldl;
-   var reverse = $Native$String.reverse;
-   var filter = $Native$String.filter;
-   var map = $Native$String.map;
-   var length = $Native$String.length;
-   var concat = $Native$String.concat;
-   var append = $Native$String.append;
-   var uncons = $Native$String.uncons;
-   var cons = $Native$String.cons;
-   var fromChar = function ($char) {    return A2(cons,$char,"");};
-   var isEmpty = $Native$String.isEmpty;
-   return _elm.String.values = {_op: _op
-                               ,isEmpty: isEmpty
-                               ,length: length
-                               ,reverse: reverse
-                               ,repeat: repeat
-                               ,cons: cons
-                               ,uncons: uncons
-                               ,fromChar: fromChar
-                               ,append: append
-                               ,concat: concat
-                               ,split: split
-                               ,join: join
-                               ,words: words
-                               ,lines: lines
-                               ,slice: slice
-                               ,left: left
-                               ,right: right
-                               ,dropLeft: dropLeft
-                               ,dropRight: dropRight
-                               ,contains: contains
-                               ,startsWith: startsWith
-                               ,endsWith: endsWith
-                               ,indexes: indexes
-                               ,indices: indices
-                               ,toInt: toInt
-                               ,toFloat: toFloat
-                               ,toList: toList
-                               ,fromList: fromList
-                               ,toUpper: toUpper
-                               ,toLower: toLower
-                               ,pad: pad
-                               ,padLeft: padLeft
-                               ,padRight: padRight
-                               ,trim: trim
-                               ,trimLeft: trimLeft
-                               ,trimRight: trimRight
-                               ,map: map
-                               ,filter: filter
-                               ,foldl: foldl
-                               ,foldr: foldr
-                               ,any: any
-                               ,all: all};
-};
-Elm.Dict = Elm.Dict || {};
-Elm.Dict.make = function (_elm) {
-   "use strict";
-   _elm.Dict = _elm.Dict || {};
-   if (_elm.Dict.values) return _elm.Dict.values;
-   var _U = Elm.Native.Utils.make(_elm),
-   $Basics = Elm.Basics.make(_elm),
-   $List = Elm.List.make(_elm),
-   $Maybe = Elm.Maybe.make(_elm),
-   $Native$Debug = Elm.Native.Debug.make(_elm),
-   $String = Elm.String.make(_elm);
-   var _op = {};
-   var foldr = F3(function (f,acc,t) {
-      foldr: while (true) {
-         var _p0 = t;
-         if (_p0.ctor === "RBEmpty_elm_builtin") {
-               return acc;
-            } else {
-               var _v1 = f,_v2 = A3(f,_p0._1,_p0._2,A3(foldr,f,acc,_p0._4)),_v3 = _p0._3;
-               f = _v1;
-               acc = _v2;
-               t = _v3;
-               continue foldr;
-            }
-      }
-   });
-   var keys = function (dict) {    return A3(foldr,F3(function (key,value,keyList) {    return A2($List._op["::"],key,keyList);}),_U.list([]),dict);};
-   var values = function (dict) {    return A3(foldr,F3(function (key,value,valueList) {    return A2($List._op["::"],value,valueList);}),_U.list([]),dict);};
-   var toList = function (dict) {
-      return A3(foldr,F3(function (key,value,list) {    return A2($List._op["::"],{ctor: "_Tuple2",_0: key,_1: value},list);}),_U.list([]),dict);
-   };
-   var foldl = F3(function (f,acc,dict) {
-      foldl: while (true) {
-         var _p1 = dict;
-         if (_p1.ctor === "RBEmpty_elm_builtin") {
-               return acc;
-            } else {
-               var _v5 = f,_v6 = A3(f,_p1._1,_p1._2,A3(foldl,f,acc,_p1._3)),_v7 = _p1._4;
-               f = _v5;
-               acc = _v6;
-               dict = _v7;
-               continue foldl;
-            }
-      }
-   });
-   var reportRemBug = F4(function (msg,c,lgot,rgot) {
-      return $Native$Debug.crash($String.concat(_U.list(["Internal red-black tree invariant violated, expected "
-                                                        ,msg
-                                                        ," and got "
-                                                        ,$Basics.toString(c)
-                                                        ,"/"
-                                                        ,lgot
-                                                        ,"/"
-                                                        ,rgot
-                                                        ,"\nPlease report this bug to <https://github.com/elm-lang/core/issues>"])));
-   });
-   var isBBlack = function (dict) {
-      var _p2 = dict;
-      _v8_2: do {
-         if (_p2.ctor === "RBNode_elm_builtin") {
-               if (_p2._0.ctor === "BBlack") {
-                     return true;
-                  } else {
-                     break _v8_2;
-                  }
-            } else {
-               if (_p2._0.ctor === "LBBlack") {
-                     return true;
-                  } else {
-                     break _v8_2;
-                  }
-            }
-      } while (false);
-      return false;
-   };
-   var Same = {ctor: "Same"};
-   var Remove = {ctor: "Remove"};
-   var Insert = {ctor: "Insert"};
-   var sizeHelp = F2(function (n,dict) {
-      sizeHelp: while (true) {
-         var _p3 = dict;
-         if (_p3.ctor === "RBEmpty_elm_builtin") {
-               return n;
-            } else {
-               var _v10 = A2(sizeHelp,n + 1,_p3._4),_v11 = _p3._3;
-               n = _v10;
-               dict = _v11;
-               continue sizeHelp;
-            }
-      }
-   });
-   var size = function (dict) {    return A2(sizeHelp,0,dict);};
-   var get = F2(function (targetKey,dict) {
-      get: while (true) {
-         var _p4 = dict;
-         if (_p4.ctor === "RBEmpty_elm_builtin") {
-               return $Maybe.Nothing;
-            } else {
-               var _p5 = A2($Basics.compare,targetKey,_p4._1);
-               switch (_p5.ctor)
-               {case "LT": var _v14 = targetKey,_v15 = _p4._3;
-                    targetKey = _v14;
-                    dict = _v15;
-                    continue get;
-                  case "EQ": return $Maybe.Just(_p4._2);
-                  default: var _v16 = targetKey,_v17 = _p4._4;
-                    targetKey = _v16;
-                    dict = _v17;
-                    continue get;}
-            }
-      }
-   });
-   var member = F2(function (key,dict) {    var _p6 = A2(get,key,dict);if (_p6.ctor === "Just") {    return true;} else {    return false;}});
-   var maxWithDefault = F3(function (k,v,r) {
-      maxWithDefault: while (true) {
-         var _p7 = r;
-         if (_p7.ctor === "RBEmpty_elm_builtin") {
-               return {ctor: "_Tuple2",_0: k,_1: v};
-            } else {
-               var _v20 = _p7._1,_v21 = _p7._2,_v22 = _p7._4;
-               k = _v20;
-               v = _v21;
-               r = _v22;
-               continue maxWithDefault;
-            }
-      }
-   });
-   var RBEmpty_elm_builtin = function (a) {    return {ctor: "RBEmpty_elm_builtin",_0: a};};
-   var RBNode_elm_builtin = F5(function (a,b,c,d,e) {    return {ctor: "RBNode_elm_builtin",_0: a,_1: b,_2: c,_3: d,_4: e};});
-   var LBBlack = {ctor: "LBBlack"};
-   var LBlack = {ctor: "LBlack"};
-   var empty = RBEmpty_elm_builtin(LBlack);
-   var isEmpty = function (dict) {    return _U.eq(dict,empty);};
-   var map = F2(function (f,dict) {
-      var _p8 = dict;
-      if (_p8.ctor === "RBEmpty_elm_builtin") {
-            return RBEmpty_elm_builtin(LBlack);
-         } else {
-            var _p9 = _p8._1;
-            return A5(RBNode_elm_builtin,_p8._0,_p9,A2(f,_p9,_p8._2),A2(map,f,_p8._3),A2(map,f,_p8._4));
-         }
-   });
-   var NBlack = {ctor: "NBlack"};
-   var BBlack = {ctor: "BBlack"};
-   var Black = {ctor: "Black"};
-   var ensureBlackRoot = function (dict) {
-      var _p10 = dict;
-      if (_p10.ctor === "RBNode_elm_builtin" && _p10._0.ctor === "Red") {
-            return A5(RBNode_elm_builtin,Black,_p10._1,_p10._2,_p10._3,_p10._4);
-         } else {
-            return dict;
-         }
-   };
-   var blackish = function (t) {
-      var _p11 = t;
-      if (_p11.ctor === "RBNode_elm_builtin") {
-            var _p12 = _p11._0;
-            return _U.eq(_p12,Black) || _U.eq(_p12,BBlack);
-         } else {
-            return true;
-         }
-   };
-   var blacken = function (t) {
-      var _p13 = t;
-      if (_p13.ctor === "RBEmpty_elm_builtin") {
-            return RBEmpty_elm_builtin(LBlack);
-         } else {
-            return A5(RBNode_elm_builtin,Black,_p13._1,_p13._2,_p13._3,_p13._4);
-         }
-   };
-   var Red = {ctor: "Red"};
-   var moreBlack = function (color) {
-      var _p14 = color;
-      switch (_p14.ctor)
-      {case "Black": return BBlack;
-         case "Red": return Black;
-         case "NBlack": return Red;
-         default: return $Native$Debug.crash("Can\'t make a double black node more black!");}
-   };
-   var lessBlack = function (color) {
-      var _p15 = color;
-      switch (_p15.ctor)
-      {case "BBlack": return Black;
-         case "Black": return Red;
-         case "Red": return NBlack;
-         default: return $Native$Debug.crash("Can\'t make a negative black node less black!");}
-   };
-   var lessBlackTree = function (dict) {
-      var _p16 = dict;
-      if (_p16.ctor === "RBNode_elm_builtin") {
-            return A5(RBNode_elm_builtin,lessBlack(_p16._0),_p16._1,_p16._2,_p16._3,_p16._4);
-         } else {
-            return RBEmpty_elm_builtin(LBlack);
-         }
-   };
-   var balancedTree = function (col) {
-      return function (xk) {
-         return function (xv) {
-            return function (yk) {
-               return function (yv) {
-                  return function (zk) {
-                     return function (zv) {
-                        return function (a) {
-                           return function (b) {
-                              return function (c) {
-                                 return function (d) {
-                                    return A5(RBNode_elm_builtin,
-                                    lessBlack(col),
-                                    yk,
-                                    yv,
-                                    A5(RBNode_elm_builtin,Black,xk,xv,a,b),
-                                    A5(RBNode_elm_builtin,Black,zk,zv,c,d));
-                                 };
-                              };
-                           };
-                        };
-                     };
-                  };
-               };
-            };
-         };
-      };
-   };
-   var redden = function (t) {
-      var _p17 = t;
-      if (_p17.ctor === "RBEmpty_elm_builtin") {
-            return $Native$Debug.crash("can\'t make a Leaf red");
-         } else {
-            return A5(RBNode_elm_builtin,Red,_p17._1,_p17._2,_p17._3,_p17._4);
-         }
-   };
-   var balanceHelp = function (tree) {
-      var _p18 = tree;
-      _v31_6: do {
-         _v31_5: do {
-            _v31_4: do {
-               _v31_3: do {
-                  _v31_2: do {
-                     _v31_1: do {
-                        _v31_0: do {
-                           if (_p18.ctor === "RBNode_elm_builtin") {
-                                 if (_p18._3.ctor === "RBNode_elm_builtin") {
-                                       if (_p18._4.ctor === "RBNode_elm_builtin") {
-                                             switch (_p18._3._0.ctor)
-                                             {case "Red": switch (_p18._4._0.ctor)
-                                                  {case "Red": if (_p18._3._3.ctor === "RBNode_elm_builtin" && _p18._3._3._0.ctor === "Red") {
-                                                             break _v31_0;
-                                                          } else {
-                                                             if (_p18._3._4.ctor === "RBNode_elm_builtin" && _p18._3._4._0.ctor === "Red") {
-                                                                   break _v31_1;
-                                                                } else {
-                                                                   if (_p18._4._3.ctor === "RBNode_elm_builtin" && _p18._4._3._0.ctor === "Red") {
-                                                                         break _v31_2;
-                                                                      } else {
-                                                                         if (_p18._4._4.ctor === "RBNode_elm_builtin" && _p18._4._4._0.ctor === "Red") {
-                                                                               break _v31_3;
-                                                                            } else {
-                                                                               break _v31_6;
-                                                                            }
-                                                                      }
-                                                                }
-                                                          }
-                                                     case "NBlack": if (_p18._3._3.ctor === "RBNode_elm_builtin" && _p18._3._3._0.ctor === "Red") {
-                                                             break _v31_0;
-                                                          } else {
-                                                             if (_p18._3._4.ctor === "RBNode_elm_builtin" && _p18._3._4._0.ctor === "Red") {
-                                                                   break _v31_1;
-                                                                } else {
-                                                                   if (_p18._0.ctor === "BBlack" && _p18._4._3.ctor === "RBNode_elm_builtin" && _p18._4._3._0.ctor === "Black" && _p18._4._4.ctor === "RBNode_elm_builtin" && _p18._4._4._0.ctor === "Black")
-                                                                   {
-                                                                         break _v31_4;
-                                                                      } else {
-                                                                         break _v31_6;
-                                                                      }
-                                                                }
-                                                          }
-                                                     default: if (_p18._3._3.ctor === "RBNode_elm_builtin" && _p18._3._3._0.ctor === "Red") {
-                                                             break _v31_0;
-                                                          } else {
-                                                             if (_p18._3._4.ctor === "RBNode_elm_builtin" && _p18._3._4._0.ctor === "Red") {
-                                                                   break _v31_1;
-                                                                } else {
-                                                                   break _v31_6;
-                                                                }
-                                                          }}
-                                                case "NBlack": switch (_p18._4._0.ctor)
-                                                  {case "Red": if (_p18._4._3.ctor === "RBNode_elm_builtin" && _p18._4._3._0.ctor === "Red") {
-                                                             break _v31_2;
-                                                          } else {
-                                                             if (_p18._4._4.ctor === "RBNode_elm_builtin" && _p18._4._4._0.ctor === "Red") {
-                                                                   break _v31_3;
-                                                                } else {
-                                                                   if (_p18._0.ctor === "BBlack" && _p18._3._3.ctor === "RBNode_elm_builtin" && _p18._3._3._0.ctor === "Black" && _p18._3._4.ctor === "RBNode_elm_builtin" && _p18._3._4._0.ctor === "Black")
-                                                                   {
-                                                                         break _v31_5;
-                                                                      } else {
-                                                                         break _v31_6;
-                                                                      }
-                                                                }
-                                                          }
-                                                     case "NBlack": if (_p18._0.ctor === "BBlack") {
-                                                             if (_p18._4._3.ctor === "RBNode_elm_builtin" && _p18._4._3._0.ctor === "Black" && _p18._4._4.ctor === "RBNode_elm_builtin" && _p18._4._4._0.ctor === "Black")
-                                                             {
-                                                                   break _v31_4;
-                                                                } else {
-                                                                   if (_p18._3._3.ctor === "RBNode_elm_builtin" && _p18._3._3._0.ctor === "Black" && _p18._3._4.ctor === "RBNode_elm_builtin" && _p18._3._4._0.ctor === "Black")
-                                                                   {
-                                                                         break _v31_5;
-                                                                      } else {
-                                                                         break _v31_6;
-                                                                      }
-                                                                }
-                                                          } else {
-                                                             break _v31_6;
-                                                          }
-                                                     default:
-                                                     if (_p18._0.ctor === "BBlack" && _p18._3._3.ctor === "RBNode_elm_builtin" && _p18._3._3._0.ctor === "Black" && _p18._3._4.ctor === "RBNode_elm_builtin" && _p18._3._4._0.ctor === "Black")
-                                                       {
-                                                             break _v31_5;
-                                                          } else {
-                                                             break _v31_6;
-                                                          }}
-                                                default: switch (_p18._4._0.ctor)
-                                                  {case "Red": if (_p18._4._3.ctor === "RBNode_elm_builtin" && _p18._4._3._0.ctor === "Red") {
-                                                             break _v31_2;
-                                                          } else {
-                                                             if (_p18._4._4.ctor === "RBNode_elm_builtin" && _p18._4._4._0.ctor === "Red") {
-                                                                   break _v31_3;
-                                                                } else {
-                                                                   break _v31_6;
-                                                                }
-                                                          }
-                                                     case "NBlack":
-                                                     if (_p18._0.ctor === "BBlack" && _p18._4._3.ctor === "RBNode_elm_builtin" && _p18._4._3._0.ctor === "Black" && _p18._4._4.ctor === "RBNode_elm_builtin" && _p18._4._4._0.ctor === "Black")
-                                                       {
-                                                             break _v31_4;
-                                                          } else {
-                                                             break _v31_6;
-                                                          }
-                                                     default: break _v31_6;}}
-                                          } else {
-                                             switch (_p18._3._0.ctor)
-                                             {case "Red": if (_p18._3._3.ctor === "RBNode_elm_builtin" && _p18._3._3._0.ctor === "Red") {
-                                                        break _v31_0;
-                                                     } else {
-                                                        if (_p18._3._4.ctor === "RBNode_elm_builtin" && _p18._3._4._0.ctor === "Red") {
-                                                              break _v31_1;
-                                                           } else {
-                                                              break _v31_6;
-                                                           }
-                                                     }
-                                                case "NBlack":
-                                                if (_p18._0.ctor === "BBlack" && _p18._3._3.ctor === "RBNode_elm_builtin" && _p18._3._3._0.ctor === "Black" && _p18._3._4.ctor === "RBNode_elm_builtin" && _p18._3._4._0.ctor === "Black")
-                                                  {
-                                                        break _v31_5;
-                                                     } else {
-                                                        break _v31_6;
-                                                     }
-                                                default: break _v31_6;}
-                                          }
-                                    } else {
-                                       if (_p18._4.ctor === "RBNode_elm_builtin") {
-                                             switch (_p18._4._0.ctor)
-                                             {case "Red": if (_p18._4._3.ctor === "RBNode_elm_builtin" && _p18._4._3._0.ctor === "Red") {
-                                                        break _v31_2;
-                                                     } else {
-                                                        if (_p18._4._4.ctor === "RBNode_elm_builtin" && _p18._4._4._0.ctor === "Red") {
-                                                              break _v31_3;
-                                                           } else {
-                                                              break _v31_6;
-                                                           }
-                                                     }
-                                                case "NBlack":
-                                                if (_p18._0.ctor === "BBlack" && _p18._4._3.ctor === "RBNode_elm_builtin" && _p18._4._3._0.ctor === "Black" && _p18._4._4.ctor === "RBNode_elm_builtin" && _p18._4._4._0.ctor === "Black")
-                                                  {
-                                                        break _v31_4;
-                                                     } else {
-                                                        break _v31_6;
-                                                     }
-                                                default: break _v31_6;}
-                                          } else {
-                                             break _v31_6;
-                                          }
-                                    }
-                              } else {
-                                 break _v31_6;
-                              }
-                        } while (false);
-                        return balancedTree(_p18._0)(_p18._3._3._1)(_p18._3._3._2)(_p18._3._1)(_p18._3._2)(_p18._1)(_p18._2)(_p18._3._3._3)(_p18._3._3._4)(_p18._3._4)(_p18._4);
-                     } while (false);
-                     return balancedTree(_p18._0)(_p18._3._1)(_p18._3._2)(_p18._3._4._1)(_p18._3._4._2)(_p18._1)(_p18._2)(_p18._3._3)(_p18._3._4._3)(_p18._3._4._4)(_p18._4);
-                  } while (false);
-                  return balancedTree(_p18._0)(_p18._1)(_p18._2)(_p18._4._3._1)(_p18._4._3._2)(_p18._4._1)(_p18._4._2)(_p18._3)(_p18._4._3._3)(_p18._4._3._4)(_p18._4._4);
-               } while (false);
-               return balancedTree(_p18._0)(_p18._1)(_p18._2)(_p18._4._1)(_p18._4._2)(_p18._4._4._1)(_p18._4._4._2)(_p18._3)(_p18._4._3)(_p18._4._4._3)(_p18._4._4._4);
-            } while (false);
-            return A5(RBNode_elm_builtin,
-            Black,
-            _p18._4._3._1,
-            _p18._4._3._2,
-            A5(RBNode_elm_builtin,Black,_p18._1,_p18._2,_p18._3,_p18._4._3._3),
-            A5(balance,Black,_p18._4._1,_p18._4._2,_p18._4._3._4,redden(_p18._4._4)));
-         } while (false);
-         return A5(RBNode_elm_builtin,
-         Black,
-         _p18._3._4._1,
-         _p18._3._4._2,
-         A5(balance,Black,_p18._3._1,_p18._3._2,redden(_p18._3._3),_p18._3._4._3),
-         A5(RBNode_elm_builtin,Black,_p18._1,_p18._2,_p18._3._4._4,_p18._4));
-      } while (false);
-      return tree;
-   };
-   var balance = F5(function (c,k,v,l,r) {    var tree = A5(RBNode_elm_builtin,c,k,v,l,r);return blackish(tree) ? balanceHelp(tree) : tree;});
-   var bubble = F5(function (c,k,v,l,r) {
-      return isBBlack(l) || isBBlack(r) ? A5(balance,moreBlack(c),k,v,lessBlackTree(l),lessBlackTree(r)) : A5(RBNode_elm_builtin,c,k,v,l,r);
-   });
-   var removeMax = F5(function (c,k,v,l,r) {
-      var _p19 = r;
-      if (_p19.ctor === "RBEmpty_elm_builtin") {
-            return A3(rem,c,l,r);
-         } else {
-            return A5(bubble,c,k,v,l,A5(removeMax,_p19._0,_p19._1,_p19._2,_p19._3,_p19._4));
-         }
-   });
-   var rem = F3(function (c,l,r) {
-      var _p20 = {ctor: "_Tuple2",_0: l,_1: r};
-      if (_p20._0.ctor === "RBEmpty_elm_builtin") {
-            if (_p20._1.ctor === "RBEmpty_elm_builtin") {
-                  var _p21 = c;
-                  switch (_p21.ctor)
-                  {case "Red": return RBEmpty_elm_builtin(LBlack);
-                     case "Black": return RBEmpty_elm_builtin(LBBlack);
-                     default: return $Native$Debug.crash("cannot have bblack or nblack nodes at this point");}
-               } else {
-                  var _p24 = _p20._1._0;
-                  var _p23 = _p20._0._0;
-                  var _p22 = {ctor: "_Tuple3",_0: c,_1: _p23,_2: _p24};
-                  if (_p22.ctor === "_Tuple3" && _p22._0.ctor === "Black" && _p22._1.ctor === "LBlack" && _p22._2.ctor === "Red") {
-                        return A5(RBNode_elm_builtin,Black,_p20._1._1,_p20._1._2,_p20._1._3,_p20._1._4);
-                     } else {
-                        return A4(reportRemBug,"Black/LBlack/Red",c,$Basics.toString(_p23),$Basics.toString(_p24));
-                     }
-               }
-         } else {
-            if (_p20._1.ctor === "RBEmpty_elm_builtin") {
-                  var _p27 = _p20._1._0;
-                  var _p26 = _p20._0._0;
-                  var _p25 = {ctor: "_Tuple3",_0: c,_1: _p26,_2: _p27};
-                  if (_p25.ctor === "_Tuple3" && _p25._0.ctor === "Black" && _p25._1.ctor === "Red" && _p25._2.ctor === "LBlack") {
-                        return A5(RBNode_elm_builtin,Black,_p20._0._1,_p20._0._2,_p20._0._3,_p20._0._4);
-                     } else {
-                        return A4(reportRemBug,"Black/Red/LBlack",c,$Basics.toString(_p26),$Basics.toString(_p27));
-                     }
-               } else {
-                  var _p31 = _p20._0._2;
-                  var _p30 = _p20._0._4;
-                  var _p29 = _p20._0._1;
-                  var l$ = A5(removeMax,_p20._0._0,_p29,_p31,_p20._0._3,_p30);
-                  var _p28 = A3(maxWithDefault,_p29,_p31,_p30);
-                  var k = _p28._0;
-                  var v = _p28._1;
-                  return A5(bubble,c,k,v,l$,r);
-               }
-         }
-   });
-   var update = F3(function (k,alter,dict) {
-      var up = function (dict) {
-         var _p32 = dict;
-         if (_p32.ctor === "RBEmpty_elm_builtin") {
-               var _p33 = alter($Maybe.Nothing);
-               if (_p33.ctor === "Nothing") {
-                     return {ctor: "_Tuple2",_0: Same,_1: empty};
-                  } else {
-                     return {ctor: "_Tuple2",_0: Insert,_1: A5(RBNode_elm_builtin,Red,k,_p33._0,empty,empty)};
-                  }
-            } else {
-               var _p44 = _p32._2;
-               var _p43 = _p32._4;
-               var _p42 = _p32._3;
-               var _p41 = _p32._1;
-               var _p40 = _p32._0;
-               var _p34 = A2($Basics.compare,k,_p41);
-               switch (_p34.ctor)
-               {case "EQ": var _p35 = alter($Maybe.Just(_p44));
-                    if (_p35.ctor === "Nothing") {
-                          return {ctor: "_Tuple2",_0: Remove,_1: A3(rem,_p40,_p42,_p43)};
-                       } else {
-                          return {ctor: "_Tuple2",_0: Same,_1: A5(RBNode_elm_builtin,_p40,_p41,_p35._0,_p42,_p43)};
-                       }
-                  case "LT": var _p36 = up(_p42);
-                    var flag = _p36._0;
-                    var newLeft = _p36._1;
-                    var _p37 = flag;
-                    switch (_p37.ctor)
-                    {case "Same": return {ctor: "_Tuple2",_0: Same,_1: A5(RBNode_elm_builtin,_p40,_p41,_p44,newLeft,_p43)};
-                       case "Insert": return {ctor: "_Tuple2",_0: Insert,_1: A5(balance,_p40,_p41,_p44,newLeft,_p43)};
-                       default: return {ctor: "_Tuple2",_0: Remove,_1: A5(bubble,_p40,_p41,_p44,newLeft,_p43)};}
-                  default: var _p38 = up(_p43);
-                    var flag = _p38._0;
-                    var newRight = _p38._1;
-                    var _p39 = flag;
-                    switch (_p39.ctor)
-                    {case "Same": return {ctor: "_Tuple2",_0: Same,_1: A5(RBNode_elm_builtin,_p40,_p41,_p44,_p42,newRight)};
-                       case "Insert": return {ctor: "_Tuple2",_0: Insert,_1: A5(balance,_p40,_p41,_p44,_p42,newRight)};
-                       default: return {ctor: "_Tuple2",_0: Remove,_1: A5(bubble,_p40,_p41,_p44,_p42,newRight)};}}
-            }
-      };
-      var _p45 = up(dict);
-      var flag = _p45._0;
-      var updatedDict = _p45._1;
-      var _p46 = flag;
-      switch (_p46.ctor)
-      {case "Same": return updatedDict;
-         case "Insert": return ensureBlackRoot(updatedDict);
-         default: return blacken(updatedDict);}
-   });
-   var insert = F3(function (key,value,dict) {    return A3(update,key,$Basics.always($Maybe.Just(value)),dict);});
-   var singleton = F2(function (key,value) {    return A3(insert,key,value,empty);});
-   var union = F2(function (t1,t2) {    return A3(foldl,insert,t2,t1);});
-   var fromList = function (assocs) {
-      return A3($List.foldl,F2(function (_p47,dict) {    var _p48 = _p47;return A3(insert,_p48._0,_p48._1,dict);}),empty,assocs);
-   };
-   var filter = F2(function (predicate,dictionary) {
-      var add = F3(function (key,value,dict) {    return A2(predicate,key,value) ? A3(insert,key,value,dict) : dict;});
-      return A3(foldl,add,empty,dictionary);
-   });
-   var intersect = F2(function (t1,t2) {    return A2(filter,F2(function (k,_p49) {    return A2(member,k,t2);}),t1);});
-   var partition = F2(function (predicate,dict) {
-      var add = F3(function (key,value,_p50) {
-         var _p51 = _p50;
-         var _p53 = _p51._1;
-         var _p52 = _p51._0;
-         return A2(predicate,key,value) ? {ctor: "_Tuple2",_0: A3(insert,key,value,_p52),_1: _p53} : {ctor: "_Tuple2",_0: _p52,_1: A3(insert,key,value,_p53)};
-      });
-      return A3(foldl,add,{ctor: "_Tuple2",_0: empty,_1: empty},dict);
-   });
-   var remove = F2(function (key,dict) {    return A3(update,key,$Basics.always($Maybe.Nothing),dict);});
-   var diff = F2(function (t1,t2) {    return A3(foldl,F3(function (k,v,t) {    return A2(remove,k,t);}),t1,t2);});
-   return _elm.Dict.values = {_op: _op
-                             ,empty: empty
-                             ,singleton: singleton
-                             ,insert: insert
-                             ,update: update
-                             ,isEmpty: isEmpty
-                             ,get: get
-                             ,remove: remove
-                             ,member: member
-                             ,size: size
-                             ,filter: filter
-                             ,partition: partition
-                             ,foldl: foldl
-                             ,foldr: foldr
-                             ,map: map
-                             ,union: union
-                             ,intersect: intersect
-                             ,diff: diff
-                             ,keys: keys
-                             ,values: values
-                             ,toList: toList
-                             ,fromList: fromList};
-};
 Elm.Json = Elm.Json || {};
 Elm.Json.Encode = Elm.Json.Encode || {};
 Elm.Json.Encode.make = function (_elm) {
@@ -8481,6 +8481,342 @@ Elm.Json.Decode.make = function (_elm) {
                                     ,andThen: andThen
                                     ,value: value
                                     ,customDecoder: customDecoder};
+};
+Elm.Native.Http = {};
+Elm.Native.Http.make = function(localRuntime) {
+
+	localRuntime.Native = localRuntime.Native || {};
+	localRuntime.Native.Http = localRuntime.Native.Http || {};
+	if (localRuntime.Native.Http.values)
+	{
+		return localRuntime.Native.Http.values;
+	}
+
+	var Dict = Elm.Dict.make(localRuntime);
+	var List = Elm.List.make(localRuntime);
+	var Maybe = Elm.Maybe.make(localRuntime);
+	var Task = Elm.Native.Task.make(localRuntime);
+
+
+	function send(settings, request)
+	{
+		return Task.asyncFunction(function(callback) {
+			var req = new XMLHttpRequest();
+
+			// start
+			if (settings.onStart.ctor === 'Just')
+			{
+				req.addEventListener('loadStart', function() {
+					var task = settings.onStart._0;
+					Task.spawn(task);
+				});
+			}
+
+			// progress
+			if (settings.onProgress.ctor === 'Just')
+			{
+				req.addEventListener('progress', function(event) {
+					var progress = !event.lengthComputable
+						? Maybe.Nothing
+						: Maybe.Just({
+							_: {},
+							loaded: event.loaded,
+							total: event.total
+						});
+					var task = settings.onProgress._0(progress);
+					Task.spawn(task);
+				});
+			}
+
+			// end
+			req.addEventListener('error', function() {
+				return callback(Task.fail({ ctor: 'RawNetworkError' }));
+			});
+
+			req.addEventListener('timeout', function() {
+				return callback(Task.fail({ ctor: 'RawTimeout' }));
+			});
+
+			req.addEventListener('load', function() {
+				return callback(Task.succeed(toResponse(req)));
+			});
+
+			req.open(request.verb, request.url, true);
+
+			// set all the headers
+			function setHeader(pair) {
+				req.setRequestHeader(pair._0, pair._1);
+			}
+			A2(List.map, setHeader, request.headers);
+
+			// set the timeout
+			req.timeout = settings.timeout;
+
+			// enable this withCredentials thing
+			req.withCredentials = settings.withCredentials;
+
+			// ask for a specific MIME type for the response
+			if (settings.desiredResponseType.ctor === 'Just')
+			{
+				req.overrideMimeType(settings.desiredResponseType._0);
+			}
+
+			// actuall send the request
+			if(request.body.ctor === "BodyFormData")
+			{
+				req.send(request.body.formData)
+			}
+			else
+			{
+				req.send(request.body._0);
+			}
+		});
+	}
+
+
+	// deal with responses
+
+	function toResponse(req)
+	{
+		var tag = req.responseType === 'blob' ? 'Blob' : 'Text'
+		var response = tag === 'Blob' ? req.response : req.responseText;
+		return {
+			_: {},
+			status: req.status,
+			statusText: req.statusText,
+			headers: parseHeaders(req.getAllResponseHeaders()),
+			url: req.responseURL,
+			value: { ctor: tag, _0: response }
+		};
+	}
+
+
+	function parseHeaders(rawHeaders)
+	{
+		var headers = Dict.empty;
+
+		if (!rawHeaders)
+		{
+			return headers;
+		}
+
+		var headerPairs = rawHeaders.split('\u000d\u000a');
+		for (var i = headerPairs.length; i--; )
+		{
+			var headerPair = headerPairs[i];
+			var index = headerPair.indexOf('\u003a\u0020');
+			if (index > 0)
+			{
+				var key = headerPair.substring(0, index);
+				var value = headerPair.substring(index + 2);
+
+				headers = A3(Dict.update, key, function(oldValue) {
+					if (oldValue.ctor === 'Just')
+					{
+						return Maybe.Just(value + ', ' + oldValue._0);
+					}
+					return Maybe.Just(value);
+				}, headers);
+			}
+		}
+
+		return headers;
+	}
+
+
+	function multipart(dataList)
+	{
+		var formData = new FormData();
+
+		while (dataList.ctor !== '[]')
+		{
+			var data = dataList._0;
+			if (data.ctor === 'StringData')
+			{
+				formData.append(data._0, data._1);
+			}
+			else
+			{
+				var fileName = data._1.ctor === 'Nothing'
+					? undefined
+					: data._1._0;
+				formData.append(data._0, data._2, fileName);
+			}
+			dataList = dataList._1;
+		}
+
+		return { ctor: 'BodyFormData', formData: formData };
+	}
+
+
+	function uriEncode(string)
+	{
+		return encodeURIComponent(string);
+	}
+
+	function uriDecode(string)
+	{
+		return decodeURIComponent(string);
+	}
+
+	return localRuntime.Native.Http.values = {
+		send: F2(send),
+		multipart: multipart,
+		uriEncode: uriEncode,
+		uriDecode: uriDecode
+	};
+};
+
+Elm.Http = Elm.Http || {};
+Elm.Http.make = function (_elm) {
+   "use strict";
+   _elm.Http = _elm.Http || {};
+   if (_elm.Http.values) return _elm.Http.values;
+   var _U = Elm.Native.Utils.make(_elm),
+   $Basics = Elm.Basics.make(_elm),
+   $Debug = Elm.Debug.make(_elm),
+   $Dict = Elm.Dict.make(_elm),
+   $Json$Decode = Elm.Json.Decode.make(_elm),
+   $List = Elm.List.make(_elm),
+   $Maybe = Elm.Maybe.make(_elm),
+   $Native$Http = Elm.Native.Http.make(_elm),
+   $Result = Elm.Result.make(_elm),
+   $Signal = Elm.Signal.make(_elm),
+   $String = Elm.String.make(_elm),
+   $Task = Elm.Task.make(_elm),
+   $Time = Elm.Time.make(_elm);
+   var _op = {};
+   var send = $Native$Http.send;
+   var BadResponse = F2(function (a,b) {    return {ctor: "BadResponse",_0: a,_1: b};});
+   var UnexpectedPayload = function (a) {    return {ctor: "UnexpectedPayload",_0: a};};
+   var handleResponse = F2(function (handle,response) {
+      if (_U.cmp(200,response.status) < 1 && _U.cmp(response.status,300) < 0) {
+            var _p0 = response.value;
+            if (_p0.ctor === "Text") {
+                  return handle(_p0._0);
+               } else {
+                  return $Task.fail(UnexpectedPayload("Response body is a blob, expecting a string."));
+               }
+         } else return $Task.fail(A2(BadResponse,response.status,response.statusText));
+   });
+   var NetworkError = {ctor: "NetworkError"};
+   var Timeout = {ctor: "Timeout"};
+   var promoteError = function (rawError) {    var _p1 = rawError;if (_p1.ctor === "RawTimeout") {    return Timeout;} else {    return NetworkError;}};
+   var fromJson = F2(function (decoder,response) {
+      var decode = function (str) {
+         var _p2 = A2($Json$Decode.decodeString,decoder,str);
+         if (_p2.ctor === "Ok") {
+               return $Task.succeed(_p2._0);
+            } else {
+               return $Task.fail(UnexpectedPayload(_p2._0));
+            }
+      };
+      return A2($Task.andThen,A2($Task.mapError,promoteError,response),handleResponse(decode));
+   });
+   var RawNetworkError = {ctor: "RawNetworkError"};
+   var RawTimeout = {ctor: "RawTimeout"};
+   var Blob = function (a) {    return {ctor: "Blob",_0: a};};
+   var Text = function (a) {    return {ctor: "Text",_0: a};};
+   var Response = F5(function (a,b,c,d,e) {    return {status: a,statusText: b,headers: c,url: d,value: e};});
+   var defaultSettings = {timeout: 0,onStart: $Maybe.Nothing,onProgress: $Maybe.Nothing,desiredResponseType: $Maybe.Nothing,withCredentials: false};
+   var post = F3(function (decoder,url,body) {
+      var request = {verb: "POST",headers: _U.list([]),url: url,body: body};
+      return A2(fromJson,decoder,A2(send,defaultSettings,request));
+   });
+   var Settings = F5(function (a,b,c,d,e) {    return {timeout: a,onStart: b,onProgress: c,desiredResponseType: d,withCredentials: e};});
+   var multipart = $Native$Http.multipart;
+   var FileData = F3(function (a,b,c) {    return {ctor: "FileData",_0: a,_1: b,_2: c};});
+   var BlobData = F3(function (a,b,c) {    return {ctor: "BlobData",_0: a,_1: b,_2: c};});
+   var blobData = BlobData;
+   var StringData = F2(function (a,b) {    return {ctor: "StringData",_0: a,_1: b};});
+   var stringData = StringData;
+   var BodyBlob = function (a) {    return {ctor: "BodyBlob",_0: a};};
+   var BodyFormData = {ctor: "BodyFormData"};
+   var ArrayBuffer = {ctor: "ArrayBuffer"};
+   var BodyString = function (a) {    return {ctor: "BodyString",_0: a};};
+   var string = BodyString;
+   var Empty = {ctor: "Empty"};
+   var empty = Empty;
+   var getString = function (url) {
+      var request = {verb: "GET",headers: _U.list([]),url: url,body: empty};
+      return A2($Task.andThen,A2($Task.mapError,promoteError,A2(send,defaultSettings,request)),handleResponse($Task.succeed));
+   };
+   var get = F2(function (decoder,url) {
+      var request = {verb: "GET",headers: _U.list([]),url: url,body: empty};
+      return A2(fromJson,decoder,A2(send,defaultSettings,request));
+   });
+   var Request = F4(function (a,b,c,d) {    return {verb: a,headers: b,url: c,body: d};});
+   var uriDecode = $Native$Http.uriDecode;
+   var uriEncode = $Native$Http.uriEncode;
+   var queryEscape = function (string) {    return A2($String.join,"+",A2($String.split,"%20",uriEncode(string)));};
+   var queryPair = function (_p3) {    var _p4 = _p3;return A2($Basics._op["++"],queryEscape(_p4._0),A2($Basics._op["++"],"=",queryEscape(_p4._1)));};
+   var url = F2(function (baseUrl,args) {
+      var _p5 = args;
+      if (_p5.ctor === "[]") {
+            return baseUrl;
+         } else {
+            return A2($Basics._op["++"],baseUrl,A2($Basics._op["++"],"?",A2($String.join,"&",A2($List.map,queryPair,args))));
+         }
+   });
+   var TODO_implement_file_in_another_library = {ctor: "TODO_implement_file_in_another_library"};
+   var TODO_implement_blob_in_another_library = {ctor: "TODO_implement_blob_in_another_library"};
+   return _elm.Http.values = {_op: _op
+                             ,getString: getString
+                             ,get: get
+                             ,post: post
+                             ,send: send
+                             ,url: url
+                             ,uriEncode: uriEncode
+                             ,uriDecode: uriDecode
+                             ,empty: empty
+                             ,string: string
+                             ,multipart: multipart
+                             ,stringData: stringData
+                             ,defaultSettings: defaultSettings
+                             ,fromJson: fromJson
+                             ,Request: Request
+                             ,Settings: Settings
+                             ,Response: Response
+                             ,Text: Text
+                             ,Blob: Blob
+                             ,Timeout: Timeout
+                             ,NetworkError: NetworkError
+                             ,UnexpectedPayload: UnexpectedPayload
+                             ,BadResponse: BadResponse
+                             ,RawTimeout: RawTimeout
+                             ,RawNetworkError: RawNetworkError};
+};
+Elm.Auth = Elm.Auth || {};
+Elm.Auth.make = function (_elm) {
+   "use strict";
+   _elm.Auth = _elm.Auth || {};
+   if (_elm.Auth.values) return _elm.Auth.values;
+   var _U = Elm.Native.Utils.make(_elm),
+   $Basics = Elm.Basics.make(_elm),
+   $Debug = Elm.Debug.make(_elm),
+   $Http = Elm.Http.make(_elm),
+   $Json$Decode = Elm.Json.Decode.make(_elm),
+   $Json$Encode = Elm.Json.Encode.make(_elm),
+   $List = Elm.List.make(_elm),
+   $Maybe = Elm.Maybe.make(_elm),
+   $Result = Elm.Result.make(_elm),
+   $Signal = Elm.Signal.make(_elm),
+   $Task = Elm.Task.make(_elm);
+   var _op = {};
+   var decodeToken = A2($Json$Decode.at,_U.list(["auth_token"]),$Json$Decode.string);
+   var jsonUserObject = F2(function (username,password) {
+      return A2($Json$Encode.encode,
+      4,
+      $Json$Encode.object(_U.list([{ctor: "_Tuple2",_0: "username",_1: $Json$Encode.string(username)}
+                                  ,{ctor: "_Tuple2",_0: "password",_1: $Json$Encode.string(password)}])));
+   });
+   var loginBody = F2(function (username,password) {    return $Http.string(A2(jsonUserObject,username,password));});
+   var loginRequest = function (body) {
+      return {verb: "POST",headers: _U.list([{ctor: "_Tuple2",_0: "Content-Type",_1: "application/json"}]),url: "/auth/login/",body: body};
+   };
+   var sendAuthRequest = function (request) {    return A2($Http.fromJson,decodeToken,A2($Http.send,$Http.defaultSettings,request));};
+   var login = F2(function (username,password) {    return sendAuthRequest(loginRequest(A2(loginBody,username,password)));});
+   return _elm.Auth.values = {_op: _op,login: login};
 };
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 
@@ -10639,367 +10975,1012 @@ Elm.Html.Events.make = function (_elm) {
                                     ,keyCode: keyCode
                                     ,Options: Options};
 };
-Elm.Native.Http = {};
-Elm.Native.Http.make = function(localRuntime) {
-
-	localRuntime.Native = localRuntime.Native || {};
-	localRuntime.Native.Http = localRuntime.Native.Http || {};
-	if (localRuntime.Native.Http.values)
-	{
-		return localRuntime.Native.Http.values;
-	}
-
-	var Dict = Elm.Dict.make(localRuntime);
-	var List = Elm.List.make(localRuntime);
-	var Maybe = Elm.Maybe.make(localRuntime);
-	var Task = Elm.Native.Task.make(localRuntime);
-
-
-	function send(settings, request)
-	{
-		return Task.asyncFunction(function(callback) {
-			var req = new XMLHttpRequest();
-
-			// start
-			if (settings.onStart.ctor === 'Just')
-			{
-				req.addEventListener('loadStart', function() {
-					var task = settings.onStart._0;
-					Task.spawn(task);
-				});
-			}
-
-			// progress
-			if (settings.onProgress.ctor === 'Just')
-			{
-				req.addEventListener('progress', function(event) {
-					var progress = !event.lengthComputable
-						? Maybe.Nothing
-						: Maybe.Just({
-							_: {},
-							loaded: event.loaded,
-							total: event.total
-						});
-					var task = settings.onProgress._0(progress);
-					Task.spawn(task);
-				});
-			}
-
-			// end
-			req.addEventListener('error', function() {
-				return callback(Task.fail({ ctor: 'RawNetworkError' }));
-			});
-
-			req.addEventListener('timeout', function() {
-				return callback(Task.fail({ ctor: 'RawTimeout' }));
-			});
-
-			req.addEventListener('load', function() {
-				return callback(Task.succeed(toResponse(req)));
-			});
-
-			req.open(request.verb, request.url, true);
-
-			// set all the headers
-			function setHeader(pair) {
-				req.setRequestHeader(pair._0, pair._1);
-			}
-			A2(List.map, setHeader, request.headers);
-
-			// set the timeout
-			req.timeout = settings.timeout;
-
-			// enable this withCredentials thing
-			req.withCredentials = settings.withCredentials;
-
-			// ask for a specific MIME type for the response
-			if (settings.desiredResponseType.ctor === 'Just')
-			{
-				req.overrideMimeType(settings.desiredResponseType._0);
-			}
-
-			// actuall send the request
-			if(request.body.ctor === "BodyFormData")
-			{
-				req.send(request.body.formData)
-			}
-			else
-			{
-				req.send(request.body._0);
-			}
-		});
-	}
-
-
-	// deal with responses
-
-	function toResponse(req)
-	{
-		var tag = req.responseType === 'blob' ? 'Blob' : 'Text'
-		var response = tag === 'Blob' ? req.response : req.responseText;
-		return {
-			_: {},
-			status: req.status,
-			statusText: req.statusText,
-			headers: parseHeaders(req.getAllResponseHeaders()),
-			url: req.responseURL,
-			value: { ctor: tag, _0: response }
-		};
-	}
-
-
-	function parseHeaders(rawHeaders)
-	{
-		var headers = Dict.empty;
-
-		if (!rawHeaders)
-		{
-			return headers;
-		}
-
-		var headerPairs = rawHeaders.split('\u000d\u000a');
-		for (var i = headerPairs.length; i--; )
-		{
-			var headerPair = headerPairs[i];
-			var index = headerPair.indexOf('\u003a\u0020');
-			if (index > 0)
-			{
-				var key = headerPair.substring(0, index);
-				var value = headerPair.substring(index + 2);
-
-				headers = A3(Dict.update, key, function(oldValue) {
-					if (oldValue.ctor === 'Just')
-					{
-						return Maybe.Just(value + ', ' + oldValue._0);
-					}
-					return Maybe.Just(value);
-				}, headers);
-			}
-		}
-
-		return headers;
-	}
-
-
-	function multipart(dataList)
-	{
-		var formData = new FormData();
-
-		while (dataList.ctor !== '[]')
-		{
-			var data = dataList._0;
-			if (data.ctor === 'StringData')
-			{
-				formData.append(data._0, data._1);
-			}
-			else
-			{
-				var fileName = data._1.ctor === 'Nothing'
-					? undefined
-					: data._1._0;
-				formData.append(data._0, data._2, fileName);
-			}
-			dataList = dataList._1;
-		}
-
-		return { ctor: 'BodyFormData', formData: formData };
-	}
-
-
-	function uriEncode(string)
-	{
-		return encodeURIComponent(string);
-	}
-
-	function uriDecode(string)
-	{
-		return decodeURIComponent(string);
-	}
-
-	return localRuntime.Native.Http.values = {
-		send: F2(send),
-		multipart: multipart,
-		uriEncode: uriEncode,
-		uriDecode: uriDecode
-	};
-};
-
-Elm.Http = Elm.Http || {};
-Elm.Http.make = function (_elm) {
+Elm.Set = Elm.Set || {};
+Elm.Set.make = function (_elm) {
    "use strict";
-   _elm.Http = _elm.Http || {};
-   if (_elm.Http.values) return _elm.Http.values;
+   _elm.Set = _elm.Set || {};
+   if (_elm.Set.values) return _elm.Set.values;
+   var _U = Elm.Native.Utils.make(_elm),$Basics = Elm.Basics.make(_elm),$Dict = Elm.Dict.make(_elm),$List = Elm.List.make(_elm);
+   var _op = {};
+   var foldr = F3(function (f,b,_p0) {    var _p1 = _p0;return A3($Dict.foldr,F3(function (k,_p2,b) {    return A2(f,k,b);}),b,_p1._0);});
+   var foldl = F3(function (f,b,_p3) {    var _p4 = _p3;return A3($Dict.foldl,F3(function (k,_p5,b) {    return A2(f,k,b);}),b,_p4._0);});
+   var toList = function (_p6) {    var _p7 = _p6;return $Dict.keys(_p7._0);};
+   var size = function (_p8) {    var _p9 = _p8;return $Dict.size(_p9._0);};
+   var member = F2(function (k,_p10) {    var _p11 = _p10;return A2($Dict.member,k,_p11._0);});
+   var isEmpty = function (_p12) {    var _p13 = _p12;return $Dict.isEmpty(_p13._0);};
+   var Set_elm_builtin = function (a) {    return {ctor: "Set_elm_builtin",_0: a};};
+   var empty = Set_elm_builtin($Dict.empty);
+   var singleton = function (k) {    return Set_elm_builtin(A2($Dict.singleton,k,{ctor: "_Tuple0"}));};
+   var insert = F2(function (k,_p14) {    var _p15 = _p14;return Set_elm_builtin(A3($Dict.insert,k,{ctor: "_Tuple0"},_p15._0));});
+   var fromList = function (xs) {    return A3($List.foldl,insert,empty,xs);};
+   var map = F2(function (f,s) {    return fromList(A2($List.map,f,toList(s)));});
+   var remove = F2(function (k,_p16) {    var _p17 = _p16;return Set_elm_builtin(A2($Dict.remove,k,_p17._0));});
+   var union = F2(function (_p19,_p18) {    var _p20 = _p19;var _p21 = _p18;return Set_elm_builtin(A2($Dict.union,_p20._0,_p21._0));});
+   var intersect = F2(function (_p23,_p22) {    var _p24 = _p23;var _p25 = _p22;return Set_elm_builtin(A2($Dict.intersect,_p24._0,_p25._0));});
+   var diff = F2(function (_p27,_p26) {    var _p28 = _p27;var _p29 = _p26;return Set_elm_builtin(A2($Dict.diff,_p28._0,_p29._0));});
+   var filter = F2(function (p,_p30) {    var _p31 = _p30;return Set_elm_builtin(A2($Dict.filter,F2(function (k,_p32) {    return p(k);}),_p31._0));});
+   var partition = F2(function (p,_p33) {
+      var _p34 = _p33;
+      var _p35 = A2($Dict.partition,F2(function (k,_p36) {    return p(k);}),_p34._0);
+      var p1 = _p35._0;
+      var p2 = _p35._1;
+      return {ctor: "_Tuple2",_0: Set_elm_builtin(p1),_1: Set_elm_builtin(p2)};
+   });
+   return _elm.Set.values = {_op: _op
+                            ,empty: empty
+                            ,singleton: singleton
+                            ,insert: insert
+                            ,remove: remove
+                            ,isEmpty: isEmpty
+                            ,member: member
+                            ,size: size
+                            ,foldl: foldl
+                            ,foldr: foldr
+                            ,map: map
+                            ,filter: filter
+                            ,partition: partition
+                            ,union: union
+                            ,intersect: intersect
+                            ,diff: diff
+                            ,toList: toList
+                            ,fromList: fromList};
+};
+Elm.Form = Elm.Form || {};
+Elm.Form.Error = Elm.Form.Error || {};
+Elm.Form.Error.make = function (_elm) {
+   "use strict";
+   _elm.Form = _elm.Form || {};
+   _elm.Form.Error = _elm.Form.Error || {};
+   if (_elm.Form.Error.values) return _elm.Form.Error.values;
    var _U = Elm.Native.Utils.make(_elm),
    $Basics = Elm.Basics.make(_elm),
    $Debug = Elm.Debug.make(_elm),
    $Dict = Elm.Dict.make(_elm),
-   $Json$Decode = Elm.Json.Decode.make(_elm),
    $List = Elm.List.make(_elm),
    $Maybe = Elm.Maybe.make(_elm),
-   $Native$Http = Elm.Native.Http.make(_elm),
    $Result = Elm.Result.make(_elm),
-   $Signal = Elm.Signal.make(_elm),
-   $String = Elm.String.make(_elm),
-   $Task = Elm.Task.make(_elm),
-   $Time = Elm.Time.make(_elm);
+   $Signal = Elm.Signal.make(_elm);
    var _op = {};
-   var send = $Native$Http.send;
-   var BadResponse = F2(function (a,b) {    return {ctor: "BadResponse",_0: a,_1: b};});
-   var UnexpectedPayload = function (a) {    return {ctor: "UnexpectedPayload",_0: a};};
-   var handleResponse = F2(function (handle,response) {
-      if (_U.cmp(200,response.status) < 1 && _U.cmp(response.status,300) < 0) {
-            var _p0 = response.value;
-            if (_p0.ctor === "Text") {
-                  return handle(_p0._0);
-               } else {
-                  return $Task.fail(UnexpectedPayload("Response body is a blob, expecting a string."));
-               }
-         } else return $Task.fail(A2(BadResponse,response.status,response.statusText));
-   });
-   var NetworkError = {ctor: "NetworkError"};
-   var Timeout = {ctor: "Timeout"};
-   var promoteError = function (rawError) {    var _p1 = rawError;if (_p1.ctor === "RawTimeout") {    return Timeout;} else {    return NetworkError;}};
-   var fromJson = F2(function (decoder,response) {
-      var decode = function (str) {
-         var _p2 = A2($Json$Decode.decodeString,decoder,str);
-         if (_p2.ctor === "Ok") {
-               return $Task.succeed(_p2._0);
-            } else {
-               return $Task.fail(UnexpectedPayload(_p2._0));
-            }
-      };
-      return A2($Task.andThen,A2($Task.mapError,promoteError,response),handleResponse(decode));
-   });
-   var RawNetworkError = {ctor: "RawNetworkError"};
-   var RawTimeout = {ctor: "RawTimeout"};
-   var Blob = function (a) {    return {ctor: "Blob",_0: a};};
-   var Text = function (a) {    return {ctor: "Text",_0: a};};
-   var Response = F5(function (a,b,c,d,e) {    return {status: a,statusText: b,headers: c,url: d,value: e};});
-   var defaultSettings = {timeout: 0,onStart: $Maybe.Nothing,onProgress: $Maybe.Nothing,desiredResponseType: $Maybe.Nothing,withCredentials: false};
-   var post = F3(function (decoder,url,body) {
-      var request = {verb: "POST",headers: _U.list([]),url: url,body: body};
-      return A2(fromJson,decoder,A2(send,defaultSettings,request));
-   });
-   var Settings = F5(function (a,b,c,d,e) {    return {timeout: a,onStart: b,onProgress: c,desiredResponseType: d,withCredentials: e};});
-   var multipart = $Native$Http.multipart;
-   var FileData = F3(function (a,b,c) {    return {ctor: "FileData",_0: a,_1: b,_2: c};});
-   var BlobData = F3(function (a,b,c) {    return {ctor: "BlobData",_0: a,_1: b,_2: c};});
-   var blobData = BlobData;
-   var StringData = F2(function (a,b) {    return {ctor: "StringData",_0: a,_1: b};});
-   var stringData = StringData;
-   var BodyBlob = function (a) {    return {ctor: "BodyBlob",_0: a};};
-   var BodyFormData = {ctor: "BodyFormData"};
-   var ArrayBuffer = {ctor: "ArrayBuffer"};
-   var BodyString = function (a) {    return {ctor: "BodyString",_0: a};};
-   var string = BodyString;
-   var Empty = {ctor: "Empty"};
-   var empty = Empty;
-   var getString = function (url) {
-      var request = {verb: "GET",headers: _U.list([]),url: url,body: empty};
-      return A2($Task.andThen,A2($Task.mapError,promoteError,A2(send,defaultSettings,request)),handleResponse($Task.succeed));
-   };
-   var get = F2(function (decoder,url) {
-      var request = {verb: "GET",headers: _U.list([]),url: url,body: empty};
-      return A2(fromJson,decoder,A2(send,defaultSettings,request));
-   });
-   var Request = F4(function (a,b,c,d) {    return {verb: a,headers: b,url: c,body: d};});
-   var uriDecode = $Native$Http.uriDecode;
-   var uriEncode = $Native$Http.uriEncode;
-   var queryEscape = function (string) {    return A2($String.join,"+",A2($String.split,"%20",uriEncode(string)));};
-   var queryPair = function (_p3) {    var _p4 = _p3;return A2($Basics._op["++"],queryEscape(_p4._0),A2($Basics._op["++"],"=",queryEscape(_p4._1)));};
-   var url = F2(function (baseUrl,args) {
-      var _p5 = args;
-      if (_p5.ctor === "[]") {
-            return baseUrl;
+   var getAt = F2(function (name,error) {
+      var _p0 = error;
+      if (_p0.ctor === "GroupErrors") {
+            return A2($Dict.get,name,_p0._0);
          } else {
-            return A2($Basics._op["++"],baseUrl,A2($Basics._op["++"],"?",A2($String.join,"&",A2($List.map,queryPair,args))));
+            return $Maybe.Nothing;
          }
    });
-   var TODO_implement_file_in_another_library = {ctor: "TODO_implement_file_in_another_library"};
-   var TODO_implement_blob_in_another_library = {ctor: "TODO_implement_blob_in_another_library"};
-   return _elm.Http.values = {_op: _op
-                             ,getString: getString
-                             ,get: get
-                             ,post: post
-                             ,send: send
-                             ,url: url
-                             ,uriEncode: uriEncode
-                             ,uriDecode: uriDecode
-                             ,empty: empty
-                             ,string: string
-                             ,multipart: multipart
-                             ,stringData: stringData
-                             ,defaultSettings: defaultSettings
-                             ,fromJson: fromJson
-                             ,Request: Request
-                             ,Settings: Settings
-                             ,Response: Response
-                             ,Text: Text
-                             ,Blob: Blob
-                             ,Timeout: Timeout
-                             ,NetworkError: NetworkError
-                             ,UnexpectedPayload: UnexpectedPayload
-                             ,BadResponse: BadResponse
-                             ,RawTimeout: RawTimeout
-                             ,RawNetworkError: RawNetworkError};
+   var CustomError = function (a) {    return {ctor: "CustomError",_0: a};};
+   var NotIncludedIn = {ctor: "NotIncludedIn"};
+   var LongerStringThan = function (a) {    return {ctor: "LongerStringThan",_0: a};};
+   var ShorterStringThan = function (a) {    return {ctor: "ShorterStringThan",_0: a};};
+   var GreaterFloatThan = function (a) {    return {ctor: "GreaterFloatThan",_0: a};};
+   var SmallerFloatThan = function (a) {    return {ctor: "SmallerFloatThan",_0: a};};
+   var GreaterIntThan = function (a) {    return {ctor: "GreaterIntThan",_0: a};};
+   var SmallerIntThan = function (a) {    return {ctor: "SmallerIntThan",_0: a};};
+   var InvalidDate = {ctor: "InvalidDate"};
+   var InvalidBool = {ctor: "InvalidBool"};
+   var InvalidFloat = {ctor: "InvalidFloat"};
+   var InvalidInt = {ctor: "InvalidInt"};
+   var InvalidFormat = {ctor: "InvalidFormat"};
+   var InvalidUrl = {ctor: "InvalidUrl"};
+   var InvalidEmail = {ctor: "InvalidEmail"};
+   var InvalidString = {ctor: "InvalidString"};
+   var Empty = {ctor: "Empty"};
+   var GroupErrors = function (a) {    return {ctor: "GroupErrors",_0: a};};
+   return _elm.Form.Error.values = {_op: _op
+                                   ,getAt: getAt
+                                   ,GroupErrors: GroupErrors
+                                   ,Empty: Empty
+                                   ,InvalidString: InvalidString
+                                   ,InvalidEmail: InvalidEmail
+                                   ,InvalidUrl: InvalidUrl
+                                   ,InvalidFormat: InvalidFormat
+                                   ,InvalidInt: InvalidInt
+                                   ,InvalidFloat: InvalidFloat
+                                   ,InvalidBool: InvalidBool
+                                   ,InvalidDate: InvalidDate
+                                   ,SmallerIntThan: SmallerIntThan
+                                   ,GreaterIntThan: GreaterIntThan
+                                   ,SmallerFloatThan: SmallerFloatThan
+                                   ,GreaterFloatThan: GreaterFloatThan
+                                   ,ShorterStringThan: ShorterStringThan
+                                   ,LongerStringThan: LongerStringThan
+                                   ,NotIncludedIn: NotIncludedIn
+                                   ,CustomError: CustomError};
 };
-Elm.Auth = Elm.Auth || {};
-Elm.Auth.make = function (_elm) {
+Elm.Form = Elm.Form || {};
+Elm.Form.Field = Elm.Form.Field || {};
+Elm.Form.Field.make = function (_elm) {
    "use strict";
-   _elm.Auth = _elm.Auth || {};
-   if (_elm.Auth.values) return _elm.Auth.values;
+   _elm.Form = _elm.Form || {};
+   _elm.Form.Field = _elm.Form.Field || {};
+   if (_elm.Form.Field.values) return _elm.Form.Field.values;
    var _U = Elm.Native.Utils.make(_elm),
    $Basics = Elm.Basics.make(_elm),
    $Debug = Elm.Debug.make(_elm),
-   $Effects = Elm.Effects.make(_elm),
+   $Dict = Elm.Dict.make(_elm),
+   $List = Elm.List.make(_elm),
+   $Maybe = Elm.Maybe.make(_elm),
+   $Result = Elm.Result.make(_elm),
+   $Signal = Elm.Signal.make(_elm);
+   var _op = {};
+   var asString = function (field) {    var _p0 = field;if (_p0.ctor === "Text") {    return $Maybe.Just(_p0._0);} else {    return $Maybe.Nothing;}};
+   var asBool = function (field) {    var _p1 = field;if (_p1.ctor === "Check") {    return $Maybe.Just(_p1._0);} else {    return $Maybe.Nothing;}};
+   var at = F2(function (name,field) {    var _p2 = field;if (_p2.ctor === "Group") {    return A2($Dict.get,name,_p2._0);} else {    return $Maybe.Nothing;}});
+   var EmptyField = {ctor: "EmptyField"};
+   var Check = function (a) {    return {ctor: "Check",_0: a};};
+   var check = Check;
+   var Text = function (a) {    return {ctor: "Text",_0: a};};
+   var text = Text;
+   var select = text;
+   var radio = text;
+   var Group = function (a) {    return {ctor: "Group",_0: a};};
+   var group = function (_p3) {    return Group($Dict.fromList(_p3));};
+   return _elm.Form.Field.values = {_op: _op
+                                   ,at: at
+                                   ,asString: asString
+                                   ,asBool: asBool
+                                   ,text: text
+                                   ,select: select
+                                   ,radio: radio
+                                   ,check: check
+                                   ,group: group
+                                   ,Group: Group
+                                   ,Text: Text
+                                   ,Check: Check
+                                   ,EmptyField: EmptyField};
+};
+Elm.Native.Date = {};
+Elm.Native.Date.make = function(localRuntime) {
+	localRuntime.Native = localRuntime.Native || {};
+	localRuntime.Native.Date = localRuntime.Native.Date || {};
+	if (localRuntime.Native.Date.values)
+	{
+		return localRuntime.Native.Date.values;
+	}
+
+	var Result = Elm.Result.make(localRuntime);
+
+	function readDate(str)
+	{
+		var date = new Date(str);
+		return isNaN(date.getTime())
+			? Result.Err('unable to parse \'' + str + '\' as a date')
+			: Result.Ok(date);
+	}
+
+	var dayTable = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+	var monthTable =
+		['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+		 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+
+	return localRuntime.Native.Date.values = {
+		read: readDate,
+		year: function(d) { return d.getFullYear(); },
+		month: function(d) { return { ctor: monthTable[d.getMonth()] }; },
+		day: function(d) { return d.getDate(); },
+		hour: function(d) { return d.getHours(); },
+		minute: function(d) { return d.getMinutes(); },
+		second: function(d) { return d.getSeconds(); },
+		millisecond: function(d) { return d.getMilliseconds(); },
+		toTime: function(d) { return d.getTime(); },
+		fromTime: function(t) { return new Date(t); },
+		dayOfWeek: function(d) { return { ctor: dayTable[d.getDay()] }; }
+	};
+};
+
+Elm.Date = Elm.Date || {};
+Elm.Date.make = function (_elm) {
+   "use strict";
+   _elm.Date = _elm.Date || {};
+   if (_elm.Date.values) return _elm.Date.values;
+   var _U = Elm.Native.Utils.make(_elm),$Native$Date = Elm.Native.Date.make(_elm),$Result = Elm.Result.make(_elm),$Time = Elm.Time.make(_elm);
+   var _op = {};
+   var millisecond = $Native$Date.millisecond;
+   var second = $Native$Date.second;
+   var minute = $Native$Date.minute;
+   var hour = $Native$Date.hour;
+   var dayOfWeek = $Native$Date.dayOfWeek;
+   var day = $Native$Date.day;
+   var month = $Native$Date.month;
+   var year = $Native$Date.year;
+   var fromTime = $Native$Date.fromTime;
+   var toTime = $Native$Date.toTime;
+   var fromString = $Native$Date.read;
+   var Dec = {ctor: "Dec"};
+   var Nov = {ctor: "Nov"};
+   var Oct = {ctor: "Oct"};
+   var Sep = {ctor: "Sep"};
+   var Aug = {ctor: "Aug"};
+   var Jul = {ctor: "Jul"};
+   var Jun = {ctor: "Jun"};
+   var May = {ctor: "May"};
+   var Apr = {ctor: "Apr"};
+   var Mar = {ctor: "Mar"};
+   var Feb = {ctor: "Feb"};
+   var Jan = {ctor: "Jan"};
+   var Sun = {ctor: "Sun"};
+   var Sat = {ctor: "Sat"};
+   var Fri = {ctor: "Fri"};
+   var Thu = {ctor: "Thu"};
+   var Wed = {ctor: "Wed"};
+   var Tue = {ctor: "Tue"};
+   var Mon = {ctor: "Mon"};
+   var Date = {ctor: "Date"};
+   return _elm.Date.values = {_op: _op
+                             ,fromString: fromString
+                             ,toTime: toTime
+                             ,fromTime: fromTime
+                             ,year: year
+                             ,month: month
+                             ,day: day
+                             ,dayOfWeek: dayOfWeek
+                             ,hour: hour
+                             ,minute: minute
+                             ,second: second
+                             ,millisecond: millisecond
+                             ,Jan: Jan
+                             ,Feb: Feb
+                             ,Mar: Mar
+                             ,Apr: Apr
+                             ,May: May
+                             ,Jun: Jun
+                             ,Jul: Jul
+                             ,Aug: Aug
+                             ,Sep: Sep
+                             ,Oct: Oct
+                             ,Nov: Nov
+                             ,Dec: Dec
+                             ,Mon: Mon
+                             ,Tue: Tue
+                             ,Wed: Wed
+                             ,Thu: Thu
+                             ,Fri: Fri
+                             ,Sat: Sat
+                             ,Sun: Sun};
+};
+Elm.Native.Regex = {};
+Elm.Native.Regex.make = function(localRuntime) {
+	localRuntime.Native = localRuntime.Native || {};
+	localRuntime.Native.Regex = localRuntime.Native.Regex || {};
+	if (localRuntime.Native.Regex.values)
+	{
+		return localRuntime.Native.Regex.values;
+	}
+	if ('values' in Elm.Native.Regex)
+	{
+		return localRuntime.Native.Regex.values = Elm.Native.Regex.values;
+	}
+
+	var List = Elm.Native.List.make(localRuntime);
+	var Maybe = Elm.Maybe.make(localRuntime);
+
+	function escape(str)
+	{
+		return str.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+	}
+	function caseInsensitive(re)
+	{
+		return new RegExp(re.source, 'gi');
+	}
+	function regex(raw)
+	{
+		return new RegExp(raw, 'g');
+	}
+
+	function contains(re, string)
+	{
+		return string.match(re) !== null;
+	}
+
+	function find(n, re, str)
+	{
+		n = n.ctor === 'All' ? Infinity : n._0;
+		var out = [];
+		var number = 0;
+		var string = str;
+		var lastIndex = re.lastIndex;
+		var prevLastIndex = -1;
+		var result;
+		while (number++ < n && (result = re.exec(string)))
+		{
+			if (prevLastIndex === re.lastIndex) break;
+			var i = result.length - 1;
+			var subs = new Array(i);
+			while (i > 0)
+			{
+				var submatch = result[i];
+				subs[--i] = submatch === undefined
+					? Maybe.Nothing
+					: Maybe.Just(submatch);
+			}
+			out.push({
+				match: result[0],
+				submatches: List.fromArray(subs),
+				index: result.index,
+				number: number
+			});
+			prevLastIndex = re.lastIndex;
+		}
+		re.lastIndex = lastIndex;
+		return List.fromArray(out);
+	}
+
+	function replace(n, re, replacer, string)
+	{
+		n = n.ctor === 'All' ? Infinity : n._0;
+		var count = 0;
+		function jsReplacer(match)
+		{
+			if (count++ >= n)
+			{
+				return match;
+			}
+			var i = arguments.length - 3;
+			var submatches = new Array(i);
+			while (i > 0)
+			{
+				var submatch = arguments[i];
+				submatches[--i] = submatch === undefined
+					? Maybe.Nothing
+					: Maybe.Just(submatch);
+			}
+			return replacer({
+				match: match,
+				submatches: List.fromArray(submatches),
+				index: arguments[i - 1],
+				number: count
+			});
+		}
+		return string.replace(re, jsReplacer);
+	}
+
+	function split(n, re, str)
+	{
+		n = n.ctor === 'All' ? Infinity : n._0;
+		if (n === Infinity)
+		{
+			return List.fromArray(str.split(re));
+		}
+		var string = str;
+		var result;
+		var out = [];
+		var start = re.lastIndex;
+		while (n--)
+		{
+			if (!(result = re.exec(string))) break;
+			out.push(string.slice(start, result.index));
+			start = re.lastIndex;
+		}
+		out.push(string.slice(start));
+		return List.fromArray(out);
+	}
+
+	return Elm.Native.Regex.values = {
+		regex: regex,
+		caseInsensitive: caseInsensitive,
+		escape: escape,
+
+		contains: F2(contains),
+		find: F3(find),
+		replace: F4(replace),
+		split: F3(split)
+	};
+};
+
+Elm.Regex = Elm.Regex || {};
+Elm.Regex.make = function (_elm) {
+   "use strict";
+   _elm.Regex = _elm.Regex || {};
+   if (_elm.Regex.values) return _elm.Regex.values;
+   var _U = Elm.Native.Utils.make(_elm),$Maybe = Elm.Maybe.make(_elm),$Native$Regex = Elm.Native.Regex.make(_elm);
+   var _op = {};
+   var split = $Native$Regex.split;
+   var replace = $Native$Regex.replace;
+   var find = $Native$Regex.find;
+   var AtMost = function (a) {    return {ctor: "AtMost",_0: a};};
+   var All = {ctor: "All"};
+   var Match = F4(function (a,b,c,d) {    return {match: a,submatches: b,index: c,number: d};});
+   var contains = $Native$Regex.contains;
+   var caseInsensitive = $Native$Regex.caseInsensitive;
+   var regex = $Native$Regex.regex;
+   var escape = $Native$Regex.escape;
+   var Regex = {ctor: "Regex"};
+   return _elm.Regex.values = {_op: _op
+                              ,regex: regex
+                              ,escape: escape
+                              ,caseInsensitive: caseInsensitive
+                              ,contains: contains
+                              ,find: find
+                              ,replace: replace
+                              ,split: split
+                              ,Match: Match
+                              ,All: All
+                              ,AtMost: AtMost};
+};
+Elm.Form = Elm.Form || {};
+Elm.Form.Validate = Elm.Form.Validate || {};
+Elm.Form.Validate.make = function (_elm) {
+   "use strict";
+   _elm.Form = _elm.Form || {};
+   _elm.Form.Validate = _elm.Form.Validate || {};
+   if (_elm.Form.Validate.values) return _elm.Form.Validate.values;
+   var _U = Elm.Native.Utils.make(_elm),
+   $Basics = Elm.Basics.make(_elm),
+   $Date = Elm.Date.make(_elm),
+   $Debug = Elm.Debug.make(_elm),
+   $Dict = Elm.Dict.make(_elm),
+   $Form$Error = Elm.Form.Error.make(_elm),
+   $Form$Field = Elm.Form.Field.make(_elm),
+   $List = Elm.List.make(_elm),
+   $Maybe = Elm.Maybe.make(_elm),
+   $Regex = Elm.Regex.make(_elm),
+   $Result = Elm.Result.make(_elm),
+   $Signal = Elm.Signal.make(_elm),
+   $String = Elm.String.make(_elm);
+   var _op = {};
+   var oneOf = F2(function (validations,field) {
+      var walkResults = F2(function (result,combined) {
+         var _p0 = {ctor: "_Tuple2",_0: combined,_1: result};
+         if (_p0.ctor === "_Tuple2" && _p0._0.ctor === "Ok") {
+               return combined;
+            } else {
+               return result;
+            }
+      });
+      var results = A2($List.map,function (v) {    return v(field);},validations);
+      return A3($List.foldl,walkResults,$Result.Err($Form$Error.Empty),results);
+   });
+   var customValidation = F3(function (validation,callback,field) {    return A2($Result.andThen,validation(field),callback);});
+   var succeed = F2(function (a,field) {    return $Result.Ok(a);});
+   var fail = F2(function (error,field) {    return $Result.Err(error);});
+   var includedIn = F3(function (items,s,field) {    return A2($List.member,s,items) ? $Result.Ok(s) : $Result.Err($Form$Error.NotIncludedIn);});
+   var validUrlPattern = $Regex.caseInsensitive($Regex.regex("^(https?://)?([\\da-z\\.-]+)\\.([a-z\\.]{2,6})([\\w \\.-]*)*/?$"));
+   var validEmailPattern = $Regex.caseInsensitive($Regex.regex("^[a-zA-Z0-9.!#$%&\'*+\\/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$"));
+   var format = F3(function (s,regex,field) {    return A2($Regex.contains,regex,s) ? $Result.Ok(s) : $Result.Err($Form$Error.InvalidFormat);});
+   var maxFloat = F3(function (max,i,field) {    return _U.cmp(i,max) < 1 ? $Result.Ok(i) : $Result.Err($Form$Error.GreaterFloatThan(max));});
+   var minFloat = F3(function (min,i,field) {    return _U.cmp(i,min) > -1 ? $Result.Ok(i) : $Result.Err($Form$Error.SmallerFloatThan(min));});
+   var maxInt = F3(function (max,i,field) {    return _U.cmp(i,max) < 1 ? $Result.Ok(i) : $Result.Err($Form$Error.GreaterIntThan(max));});
+   var minInt = F3(function (min,i,field) {    return _U.cmp(i,min) > -1 ? $Result.Ok(i) : $Result.Err($Form$Error.SmallerIntThan(min));});
+   var maxLength = F3(function (max,s,field) {    return _U.cmp($String.length(s),max) < 1 ? $Result.Ok(s) : $Result.Err($Form$Error.ShorterStringThan(max));});
+   var minLength = F3(function (min,s,field) {
+      return _U.cmp($String.length(s),min) > -1 ? $Result.Ok(s) : $Result.Err($Form$Error.ShorterStringThan(min));
+   });
+   var nonEmpty = F2(function (s,field) {    return $String.isEmpty(s) ? $Result.Err($Form$Error.Empty) : $Result.Ok(s);});
+   var maybe = F2(function (validation,field) {    return $Result.Ok($Result.toMaybe(validation(field)));});
+   var date = function (v) {
+      var _p1 = v;
+      if (_p1.ctor === "Text") {
+            return A2($Result.formatError,function (_p2) {    return $Form$Error.InvalidDate;},$Date.fromString(_p1._0));
+         } else {
+            return $Result.Err($Form$Error.InvalidDate);
+         }
+   };
+   var bool = function (v) {    var _p3 = v;if (_p3.ctor === "Check") {    return $Result.Ok(_p3._0);} else {    return $Result.Ok(false);}};
+   var emptyString = function (v) {
+      var _p4 = v;
+      if (_p4.ctor === "Text") {
+            var _p5 = _p4._0;
+            return $String.isEmpty(_p5) ? $Result.Ok(_p5) : $Result.Err($Form$Error.InvalidString);
+         } else {
+            return $Result.Ok("");
+         }
+   };
+   var string = function (v) {
+      var _p6 = v;
+      if (_p6.ctor === "Text") {
+            var _p7 = _p6._0;
+            return $String.isEmpty(_p7) ? $Result.Err($Form$Error.Empty) : $Result.Ok(_p7);
+         } else {
+            return $Result.Err($Form$Error.InvalidString);
+         }
+   };
+   var $float = function (v) {
+      var _p8 = v;
+      if (_p8.ctor === "Text") {
+            return A2($Result.formatError,function (_p9) {    return $Form$Error.InvalidFloat;},$String.toFloat(_p8._0));
+         } else {
+            return $Result.Err($Form$Error.InvalidInt);
+         }
+   };
+   var $int = function (v) {
+      var _p10 = v;
+      if (_p10.ctor === "Text") {
+            return A2($Result.formatError,function (_p11) {    return $Form$Error.InvalidInt;},$String.toInt(_p10._0));
+         } else {
+            return $Result.Err($Form$Error.InvalidInt);
+         }
+   };
+   var getErr = function (res) {    var _p12 = res;if (_p12.ctor === "Ok") {    return $Maybe.Nothing;} else {    return $Maybe.Just(_p12._0);}};
+   var groupErrorsUnion = F2(function (e1,e2) {
+      var _p13 = {ctor: "_Tuple2",_0: e1,_1: e2};
+      if (_p13.ctor === "_Tuple2" && _p13._0.ctor === "GroupErrors" && _p13._1.ctor === "GroupErrors") {
+            return $Form$Error.GroupErrors(A2($Dict.union,_p13._0._0,_p13._1._0));
+         } else {
+            return e2;
+         }
+   });
+   var mergeMany = function (errors) {
+      return A3($List.foldl,groupErrorsUnion,$Form$Error.GroupErrors($Dict.empty),A2($List.filterMap,$Basics.identity,errors));
+   };
+   var get = F3(function (key,validation,field) {
+      return A2($Result.formatError,
+      function (e) {
+         return $Form$Error.GroupErrors($Dict.fromList(_U.list([{ctor: "_Tuple2",_0: key,_1: e}])));
+      },
+      validation(A2($Maybe.withDefault,$Form$Field.EmptyField,A2($Form$Field.at,key,field))));
+   });
+   _op[":="] = get;
+   _op["?="] = F2(function (s,v) {    return maybe(A2(get,s,v));});
+   var customError = $Form$Error.CustomError;
+   var formatError = F3(function (f,validation,field) {    return A2($Result.formatError,f,validation(field));});
+   var defaultValue = F3(function (a,validation,field) {    return $Result.Ok(A2($Result.withDefault,a,validation(field)));});
+   var apply = F3(function (partialValidation,aValidation,field) {
+      var _p14 = {ctor: "_Tuple2",_0: partialValidation(field),_1: aValidation(field)};
+      if (_p14._0.ctor === "Ok" && _p14._1.ctor === "Ok") {
+            return $Result.Ok(_p14._0._0(_p14._1._0));
+         } else {
+            return $Result.Err(mergeMany(_U.list([getErr(_p14._0),getErr(_p14._1)])));
+         }
+   });
+   _op["|:"] = apply;
+   var andThen = F3(function (validation,callback,field) {
+      return A2($Result.andThen,validation(field),function (next) {    return A2(callback,next,field);});
+   });
+   var pipeTo = $Basics.flip(andThen);
+   var email = A2(andThen,
+   string,
+   function (s) {
+      return A2(formatError,function (_p15) {    return $Form$Error.InvalidEmail;},A2(format,s,validEmailPattern));
+   });
+   var url = A2(andThen,string,function (s) {    return A2(formatError,function (_p16) {    return $Form$Error.InvalidUrl;},A2(format,s,validUrlPattern));});
+   var map = F3(function (f,validation,field) {    return A2($Result.map,f,validation(field));});
+   var form1 = map;
+   var form2 = F3(function (func,v1,v2) {    return A2(apply,A2(form1,func,v1),v2);});
+   var form3 = F4(function (func,v1,v2,v3) {    return A2(apply,A3(form2,func,v1,v2),v3);});
+   var form4 = F5(function (func,v1,v2,v3,v4) {    return A2(apply,A4(form3,func,v1,v2,v3),v4);});
+   var form5 = F6(function (func,v1,v2,v3,v4,v5) {    return A2(apply,A5(form4,func,v1,v2,v3,v4),v5);});
+   var form6 = F7(function (func,v1,v2,v3,v4,v5,v6) {    return A2(apply,A6(form5,func,v1,v2,v3,v4,v5),v6);});
+   var form7 = F8(function (func,v1,v2,v3,v4,v5,v6,v7) {    return A2(apply,A7(form6,func,v1,v2,v3,v4,v5,v6),v7);});
+   var form8 = F9(function (func,v1,v2,v3,v4,v5,v6,v7,v8) {    return A2(apply,A8(form7,func,v1,v2,v3,v4,v5,v6,v7),v8);});
+   return _elm.Form.Validate.values = {_op: _op
+                                      ,get: get
+                                      ,map: map
+                                      ,andThen: andThen
+                                      ,pipeTo: pipeTo
+                                      ,apply: apply
+                                      ,customError: customError
+                                      ,defaultValue: defaultValue
+                                      ,form1: form1
+                                      ,form2: form2
+                                      ,form3: form3
+                                      ,form4: form4
+                                      ,form5: form5
+                                      ,form6: form6
+                                      ,form7: form7
+                                      ,form8: form8
+                                      ,string: string
+                                      ,$int: $int
+                                      ,$float: $float
+                                      ,bool: bool
+                                      ,date: date
+                                      ,maybe: maybe
+                                      ,email: email
+                                      ,url: url
+                                      ,emptyString: emptyString
+                                      ,minInt: minInt
+                                      ,maxInt: maxInt
+                                      ,minFloat: minFloat
+                                      ,maxFloat: maxFloat
+                                      ,minLength: minLength
+                                      ,maxLength: maxLength
+                                      ,nonEmpty: nonEmpty
+                                      ,format: format
+                                      ,includedIn: includedIn
+                                      ,fail: fail
+                                      ,succeed: succeed
+                                      ,customValidation: customValidation
+                                      ,oneOf: oneOf};
+};
+Elm.Form = Elm.Form || {};
+Elm.Form.make = function (_elm) {
+   "use strict";
+   _elm.Form = _elm.Form || {};
+   if (_elm.Form.values) return _elm.Form.values;
+   var _U = Elm.Native.Utils.make(_elm),
+   $Basics = Elm.Basics.make(_elm),
+   $Debug = Elm.Debug.make(_elm),
+   $Dict = Elm.Dict.make(_elm),
+   $Form$Error = Elm.Form.Error.make(_elm),
+   $Form$Field = Elm.Form.Field.make(_elm),
+   $Form$Validate = Elm.Form.Validate.make(_elm),
+   $List = Elm.List.make(_elm),
+   $Maybe = Elm.Maybe.make(_elm),
+   $Result = Elm.Result.make(_elm),
+   $Set = Elm.Set.make(_elm),
+   $Signal = Elm.Signal.make(_elm),
+   $String = Elm.String.make(_elm);
+   var _op = {};
+   var merge = F2(function (v1,v2) {
+      var _p0 = {ctor: "_Tuple2",_0: v1,_1: v2};
+      if (_p0.ctor === "_Tuple2" && _p0._0.ctor === "Group" && _p0._1.ctor === "Group") {
+            return $Form$Field.Group(A2($Dict.union,_p0._0._0,_p0._1._0));
+         } else {
+            return v1;
+         }
+   });
+   var getFocus = function (_p1) {    var _p2 = _p1;return _p2._0.focus;};
+   var isDirtyAt = F2(function (qualifiedName,_p3) {    var _p4 = _p3;return A2($Set.member,qualifiedName,_p4._0.dirtyFields);});
+   var isChangedAt = F2(function (qualifiedName,_p5) {    var _p6 = _p5;return A2($Set.member,qualifiedName,_p6._0.changedFields);});
+   var getErrorAt = F2(function (qualifiedName,_p7) {
+      var _p8 = _p7;
+      var walkPath = F2(function (path,maybeNode) {
+         walkPath: while (true) {
+            var _p9 = path;
+            if (_p9.ctor === "::") {
+                  var _p10 = maybeNode;
+                  if (_p10.ctor === "Just") {
+                        var _p12 = _p10._0;
+                        var _p11 = _p12;
+                        if (_p11.ctor === "GroupErrors") {
+                              var _v8 = _p9._1,_v9 = A2($Form$Error.getAt,_p9._0,_p12);
+                              path = _v8;
+                              maybeNode = _v9;
+                              continue walkPath;
+                           } else {
+                              return $Maybe.Just(_p12);
+                           }
+                     } else {
+                        return $Maybe.Nothing;
+                     }
+               } else {
+                  return maybeNode;
+               }
+         }
+      });
+      return A2(walkPath,A2($String.split,".",qualifiedName),$Maybe.Just(_p8._0.errors));
+   });
+   var getErrors = function (_p13) {
+      var _p14 = _p13;
+      var mapGroupItem = F2(function (path,_p15) {    var _p16 = _p15;return A2(walkTree,A2($Basics._op["++"],path,_U.list([_p16._0])),_p16._1);});
+      var walkTree = F2(function (path,node) {
+         var _p17 = node;
+         if (_p17.ctor === "GroupErrors") {
+               return A2($List.concatMap,mapGroupItem(path),$Dict.toList(_p17._0));
+            } else {
+               return _U.list([{ctor: "_Tuple2",_0: A2($String.join,".",path),_1: node}]);
+            }
+      });
+      return A2(walkTree,_U.list([]),_p14._0.errors);
+   };
+   var isSubmitted = function (_p18) {    var _p19 = _p18;return _p19._0.isSubmitted;};
+   var getLiveErrorAt = F2(function (name,form) {
+      return isSubmitted(form) || A2(isChangedAt,name,form) && $Basics.not(A2(isDirtyAt,name,form)) ? A2(getErrorAt,name,form) : $Maybe.Nothing;
+   });
+   var getOutput = function (_p20) {    var _p21 = _p20;return _p21._0.output;};
+   var setFieldAt = F3(function (qualifiedName,field,_p22) {
+      var _p23 = _p22;
+      var walkPath = F2(function (path,maybeNode) {
+         var _p24 = path;
+         if (_p24.ctor === "::") {
+               var _p25 = _p24._0;
+               var node = A2($Maybe.withDefault,$Form$Field.Group($Dict.empty),maybeNode);
+               var childField = A2(walkPath,_p24._1,A2($Form$Field.at,_p25,node));
+               return A2(merge,$Form$Field.Group($Dict.fromList(_U.list([{ctor: "_Tuple2",_0: _p25,_1: childField}]))),node);
+            } else {
+               return field;
+            }
+      });
+      return A2(walkPath,A2($String.split,".",qualifiedName),$Maybe.Just(_p23._0.fields));
+   });
+   var getFieldAt = F2(function (qualifiedName,_p26) {
+      var _p27 = _p26;
+      var walkPath = F2(function (name,maybeField) {
+         var _p28 = maybeField;
+         if (_p28.ctor === "Just") {
+               return A2($Form$Field.at,name,_p28._0);
+            } else {
+               return $Maybe.Nothing;
+            }
+      });
+      return A3($List.foldl,walkPath,$Maybe.Just(_p27._0.fields),A2($String.split,".",qualifiedName));
+   });
+   var getStringAt = F2(function (name,form) {    return A2($Maybe.andThen,A2(getFieldAt,name,form),$Form$Field.asString);});
+   var getBoolAt = F2(function (name,form) {    return A2($Maybe.andThen,A2(getFieldAt,name,form),$Form$Field.asBool);});
+   var updateValidate = function (model) {
+      var _p29 = model.validation(model.fields);
+      if (_p29.ctor === "Ok") {
+            return _U.update(model,{errors: $Form$Error.GroupErrors($Dict.empty),dirtyFields: $Set.empty,output: $Maybe.Just(_p29._0)});
+         } else {
+            return _U.update(model,{errors: _p29._0,dirtyFields: $Set.empty,output: $Maybe.Nothing});
+         }
+   };
+   var Reset = function (a) {    return {ctor: "Reset",_0: a};};
+   var reset = Reset;
+   var Submit = {ctor: "Submit"};
+   var submit = Submit;
+   var Validate = {ctor: "Validate"};
+   var validate = Validate;
+   var UpdateField = F2(function (a,b) {    return {ctor: "UpdateField",_0: a,_1: b};});
+   var updateTextField = F2(function (name,s) {    return A2(UpdateField,name,$Form$Field.Text(s));});
+   var updateSelectField = updateTextField;
+   var updateRadioField = updateTextField;
+   var updateCheckField = F2(function (name,b) {    return A2(UpdateField,name,$Form$Field.Check(b));});
+   var OnBlur = function (a) {    return {ctor: "OnBlur",_0: a};};
+   var onBlur = OnBlur;
+   var OnFocus = function (a) {    return {ctor: "OnFocus",_0: a};};
+   var onFocus = OnFocus;
+   var NoOp = {ctor: "NoOp"};
+   var getField = F3(function (getValue,path,form) {
+      return {path: path
+             ,value: A2(getValue,path,form)
+             ,error: A2(getErrorAt,path,form)
+             ,liveError: A2(getLiveErrorAt,path,form)
+             ,isDirty: A2(isDirtyAt,path,form)
+             ,isChanged: A2(isChangedAt,path,form)
+             ,hasFocus: _U.eq(getFocus(form),$Maybe.Just(path))};
+   });
+   var getFieldAsBool = getField(getBoolAt);
+   var getFieldAsString = getField(getStringAt);
+   var FieldState = F7(function (a,b,c,d,e,f,g) {    return {path: a,value: b,error: c,liveError: d,isDirty: e,isChanged: f,hasFocus: g};});
+   var Model = F8(function (a,b,c,d,e,f,g,h) {
+      return {fields: a,focus: b,dirtyFields: c,changedFields: d,isSubmitted: e,output: f,errors: g,validation: h};
+   });
+   var F = function (a) {    return {ctor: "F",_0: a};};
+   var initial = F2(function (initialFields,validation) {
+      return F({fields: $Form$Field.group(initialFields)
+               ,focus: $Maybe.Nothing
+               ,dirtyFields: $Set.empty
+               ,changedFields: $Set.empty
+               ,isSubmitted: false
+               ,output: $Maybe.Nothing
+               ,errors: $Form$Error.GroupErrors($Dict.empty)
+               ,validation: validation});
+   });
+   var update = F2(function (action,_p30) {
+      var _p31 = _p30;
+      var _p34 = _p31._0;
+      var _p32 = action;
+      switch (_p32.ctor)
+      {case "NoOp": return F(_p34);
+         case "OnFocus": var newModel = _U.update(_p34,{focus: $Maybe.Just(_p32._0)});
+           return F(newModel);
+         case "OnBlur": var newModel = _U.update(_p34,{focus: $Maybe.Nothing});
+           return F(updateValidate(newModel));
+         case "UpdateField": var _p33 = _p32._0;
+           var newChangedFields = A2($Set.insert,_p33,_p34.changedFields);
+           var newDirtyFields = A2($Set.insert,_p33,_p34.dirtyFields);
+           var newFields = A3(setFieldAt,_p33,_p32._1,F(_p34));
+           var newModel = _U.update(_p34,{fields: newFields,dirtyFields: newDirtyFields,changedFields: newChangedFields});
+           return F(newModel);
+         case "Validate": return F(updateValidate(_p34));
+         case "Submit": var validatedModel = updateValidate(_p34);
+           return F(_U.update(validatedModel,{isSubmitted: true}));
+         default: var newModel = _U.update(_p34,
+           {fields: $Form$Field.group(_p32._0)
+           ,dirtyFields: $Set.empty
+           ,changedFields: $Set.empty
+           ,isSubmitted: false
+           ,errors: $Form$Error.GroupErrors($Dict.empty)});
+           return F(newModel);}
+   });
+   return _elm.Form.values = {_op: _op
+                             ,initial: initial
+                             ,update: update
+                             ,getFieldAsString: getFieldAsString
+                             ,getFieldAsBool: getFieldAsBool
+                             ,getFocus: getFocus
+                             ,getErrors: getErrors
+                             ,isSubmitted: isSubmitted
+                             ,getOutput: getOutput
+                             ,onFocus: onFocus
+                             ,onBlur: onBlur
+                             ,validate: validate
+                             ,submit: submit
+                             ,reset: reset
+                             ,updateTextField: updateTextField
+                             ,updateSelectField: updateSelectField
+                             ,updateCheckField: updateCheckField
+                             ,updateRadioField: updateRadioField
+                             ,FieldState: FieldState};
+};
+Elm.Form = Elm.Form || {};
+Elm.Form.Input = Elm.Form.Input || {};
+Elm.Form.Input.make = function (_elm) {
+   "use strict";
+   _elm.Form = _elm.Form || {};
+   _elm.Form.Input = _elm.Form.Input || {};
+   if (_elm.Form.Input.values) return _elm.Form.Input.values;
+   var _U = Elm.Native.Utils.make(_elm),
+   $Basics = Elm.Basics.make(_elm),
+   $Debug = Elm.Debug.make(_elm),
+   $Form = Elm.Form.make(_elm),
    $Html = Elm.Html.make(_elm),
+   $Html$Attributes = Elm.Html.Attributes.make(_elm),
    $Html$Events = Elm.Html.Events.make(_elm),
-   $Http = Elm.Http.make(_elm),
-   $Json$Decode = Elm.Json.Decode.make(_elm),
-   $Json$Encode = Elm.Json.Encode.make(_elm),
+   $List = Elm.List.make(_elm),
+   $Maybe = Elm.Maybe.make(_elm),
+   $Result = Elm.Result.make(_elm),
+   $Signal = Elm.Signal.make(_elm),
+   $String = Elm.String.make(_elm);
+   var _op = {};
+   var dumpErrors = function (form) {
+      var line = function (_p0) {    var _p1 = _p0;return A2($Basics._op["++"],_p1._0,A2($Basics._op["++"],": ",$Basics.toString(_p1._1)));};
+      var content = A2($String.join,"\n",A2($List.map,line,$Form.getErrors(form)));
+      return A2($Html.pre,_U.list([]),_U.list([$Html.text(content)]));
+   };
+   var radioInput = F4(function (value,state,addr,attrs) {
+      var formAttrs = _U.list([$Html$Attributes.type$("radio")
+                              ,$Html$Attributes.name(value)
+                              ,$Html$Attributes.checked(_U.eq(state.value,$Maybe.Just(value)))
+                              ,A2($Html$Events.onFocus,addr,$Form.onFocus(state.path))
+                              ,A2($Html$Events.onBlur,addr,$Form.onBlur(state.path))
+                              ,A3($Html$Events.on,
+                              "change",
+                              $Html$Events.targetValue,
+                              function (v) {
+                                 return A2($Signal.message,addr,A2($Form.updateRadioField,state.path,v));
+                              })]);
+      return A2($Html.input,A2($Basics._op["++"],formAttrs,attrs),_U.list([]));
+   });
+   var selectInput = F4(function (options,state,addr,attrs) {
+      var buildOption = function (_p2) {
+         var _p3 = _p2;
+         var _p4 = _p3._0;
+         return A2($Html.option,
+         _U.list([$Html$Attributes.value(_p4),$Html$Attributes.selected(_U.eq(state.value,$Maybe.Just(_p4)))]),
+         _U.list([$Html.text(_p3._1)]));
+      };
+      var formAttrs = _U.list([$Html$Attributes.type$("checkbox")
+                              ,A3($Html$Events.on,
+                              "change",
+                              $Html$Events.targetValue,
+                              function (v) {
+                                 return A2($Signal.message,addr,A2($Form.updateSelectField,state.path,v));
+                              })
+                              ,A2($Html$Events.onFocus,addr,$Form.onFocus(state.path))
+                              ,A2($Html$Events.onBlur,addr,$Form.onBlur(state.path))]);
+      return A2($Html.select,A2($Basics._op["++"],formAttrs,attrs),A2($List.map,buildOption,options));
+   });
+   _op["?="] = $Basics.flip($Maybe.withDefault);
+   var baseInput = F4(function (t,state,addr,attrs) {
+      var formAttrs = _U.list([$Html$Attributes.type$(t)
+                              ,$Html$Attributes.value(A2(_op["?="],state.value,""))
+                              ,A3($Html$Events.on,
+                              "input",
+                              $Html$Events.targetValue,
+                              function (v) {
+                                 return A2($Signal.message,addr,A2($Form.updateTextField,state.path,v));
+                              })
+                              ,A2($Html$Events.onFocus,addr,$Form.onFocus(state.path))
+                              ,A2($Html$Events.onBlur,addr,$Form.onBlur(state.path))]);
+      return A2($Html.input,A2($Basics._op["++"],formAttrs,attrs),_U.list([]));
+   });
+   var textInput = baseInput("text");
+   var passwordInput = baseInput("password");
+   var textArea = F3(function (state,addr,attrs) {
+      var value = A2(_op["?="],state.value,"");
+      var formAttrs = _U.list([A3($Html$Events.on,
+                              "input",
+                              $Html$Events.targetValue,
+                              function (v) {
+                                 return A2($Signal.message,addr,A2($Form.updateTextField,state.path,v));
+                              })
+                              ,A2($Html$Events.onFocus,addr,$Form.onFocus(state.path))
+                              ,A2($Html$Events.onBlur,addr,$Form.onBlur(state.path))]);
+      return A2($Html.textarea,A2($Basics._op["++"],formAttrs,attrs),_U.list([$Html.text(value)]));
+   });
+   var checkboxInput = F3(function (state,addr,attrs) {
+      var formAttrs = _U.list([$Html$Attributes.type$("checkbox")
+                              ,$Html$Attributes.checked(A2(_op["?="],state.value,false))
+                              ,A3($Html$Events.on,
+                              "change",
+                              $Html$Events.targetChecked,
+                              function (v) {
+                                 return A2($Signal.message,addr,A2($Form.updateCheckField,state.path,v));
+                              })
+                              ,A2($Html$Events.onFocus,addr,$Form.onFocus(state.path))
+                              ,A2($Html$Events.onBlur,addr,$Form.onBlur(state.path))]);
+      return A2($Html.input,A2($Basics._op["++"],formAttrs,attrs),_U.list([]));
+   });
+   return _elm.Form.Input.values = {_op: _op
+                                   ,baseInput: baseInput
+                                   ,textInput: textInput
+                                   ,passwordInput: passwordInput
+                                   ,textArea: textArea
+                                   ,checkboxInput: checkboxInput
+                                   ,selectInput: selectInput
+                                   ,radioInput: radioInput
+                                   ,dumpErrors: dumpErrors};
+};
+Elm.Login = Elm.Login || {};
+Elm.Login.make = function (_elm) {
+   "use strict";
+   _elm.Login = _elm.Login || {};
+   if (_elm.Login.values) return _elm.Login.values;
+   var _U = Elm.Native.Utils.make(_elm),
+   $Auth = Elm.Auth.make(_elm),
+   $Basics = Elm.Basics.make(_elm),
+   $Debug = Elm.Debug.make(_elm),
+   $Effects = Elm.Effects.make(_elm),
+   $Form = Elm.Form.make(_elm),
+   $Form$Input = Elm.Form.Input.make(_elm),
+   $Form$Validate = Elm.Form.Validate.make(_elm),
+   $Html = Elm.Html.make(_elm),
+   $Html$Attributes = Elm.Html.Attributes.make(_elm),
+   $Html$Events = Elm.Html.Events.make(_elm),
    $List = Elm.List.make(_elm),
    $Maybe = Elm.Maybe.make(_elm),
    $Result = Elm.Result.make(_elm),
    $Signal = Elm.Signal.make(_elm),
    $Task = Elm.Task.make(_elm);
    var _op = {};
-   var decodeToken = A2($Json$Decode.at,_U.list(["data","token"]),$Json$Decode.string);
-   var jsonUserObject = F2(function (username,password) {
-      return A2($Json$Encode.encode,
-      4,
-      $Json$Encode.object(_U.list([{ctor: "_Tuple2",_0: "username",_1: $Json$Encode.string(username)}
-                                  ,{ctor: "_Tuple2",_0: "password",_1: $Json$Encode.string(password)}])));
-   });
-   var loginBody = F2(function (username,password) {    return $Http.string(A2(jsonUserObject,username,password));});
-   var authRequest = function (body) {
-      return {verb: "POST",headers: _U.list([{ctor: "_Tuple2",_0: "Content-Type",_1: "application/json"}]),url: "/auth/login/",body: body};
-   };
-   var sendAuthRequest = function (request) {    return A2($Http.fromJson,decodeToken,A2($Http.send,$Http.defaultSettings,request));};
    var Logout = {ctor: "Logout"};
    var LoginComplete = function (a) {    return {ctor: "LoginComplete",_0: a};};
-   var login = F2(function (username,password) {
-      return $Effects.task(A2($Task.map,LoginComplete,$Task.toMaybe(sendAuthRequest(authRequest(A2(loginBody,username,password))))));
+   var loginEffects = F2(function (username,password) {
+      return $Effects.task(A2($Task.map,LoginComplete,$Task.toMaybe(A2($Auth.login,username,password))));
    });
    var SubmitLogin = function (a) {    return {ctor: "SubmitLogin",_0: a};};
+   var FormAction = function (a) {    return {ctor: "FormAction",_0: a};};
    var view = F2(function (address,model) {
-      return A2($Html.div,
-      _U.list([]),
-      _U.list([A2($Html.button,
-      _U.list([A2($Html$Events.onClick,address,SubmitLogin({ctor: "_Tuple2",_0: "test",_1: "test"}))]),
-      _U.list([$Html.text("Login")]))]));
+      var _p0 = model.state;
+      if (_p0.ctor === "Authenticated") {
+            return $Html.text(model.token);
+         } else {
+            var password = A2($Form.getFieldAsString,"password",model.form);
+            var username = A2($Form.getFieldAsString,"username",model.form);
+            var errorFor = function (field) {
+               var _p1 = field.liveError;
+               if (_p1.ctor === "Just") {
+                     return A2($Html.div,_U.list([$Html$Attributes.$class("error")]),_U.list([$Html.text($Basics.toString(_p1._0))]));
+                  } else {
+                     return $Html.text("");
+                  }
+            };
+            var formAddress = A2($Signal.forwardTo,address,FormAction);
+            return A2($Html.div,
+            _U.list([]),
+            _U.list([A2($Html.label,_U.list([]),_U.list([$Html.text("Username")]))
+                    ,A3($Form$Input.textInput,username,formAddress,_U.list([]))
+                    ,errorFor(username)
+                    ,A2($Html.label,_U.list([]),_U.list([$Html.text("Password")]))
+                    ,A3($Form$Input.textInput,password,formAddress,_U.list([]))
+                    ,errorFor(password)
+                    ,A2($Html.button,_U.list([A2($Html$Events.onClick,formAddress,$Form.submit)]),_U.list([$Html.text("Login")]))]));
+         }
    });
-   var Model = F2(function (a,b) {    return {token: a,state: b};});
+   var Model = F3(function (a,b,c) {    return {token: a,state: b,form: c};});
+   var Login = F2(function (a,b) {    return {username: a,password: b};});
+   var validate = A3($Form$Validate.form2,
+   Login,
+   A2($Form$Validate._op[":="],"username",$Form$Validate.string),
+   A2($Form$Validate._op[":="],"password",$Form$Validate.string));
    var Unauthenticated = {ctor: "Unauthenticated"};
-   var init = {ctor: "_Tuple2",_0: {token: "",state: Unauthenticated},_1: $Effects.none};
+   var init = {ctor: "_Tuple2",_0: {token: "",state: Unauthenticated,form: A2($Form.initial,_U.list([]),validate)},_1: $Effects.none};
    var Authenticated = {ctor: "Authenticated"};
    var update = F2(function (action,model) {
-      var _p0 = action;
-      switch (_p0.ctor)
-      {case "SubmitLogin": return {ctor: "_Tuple2",_0: model,_1: A2(login,_p0._0._0,_p0._0._1)};
-         case "LoginComplete": return {ctor: "_Tuple2",_0: {token: A2($Maybe.withDefault,"no token",_p0._0),state: Authenticated},_1: $Effects.none};
-         default: return {ctor: "_Tuple2",_0: {token: "",state: Unauthenticated},_1: $Effects.none};}
+      var _p2 = action;
+      switch (_p2.ctor)
+      {case "FormAction": return {ctor: "_Tuple2"
+                                 ,_0: _U.update(model,{form: A2($Form.update,_p2._0,model.form)})
+                                 ,_1: function () {
+                                    var _p3 = $Form.getOutput(model.form);
+                                    if (_p3.ctor === "Just") {
+                                          var _p4 = _p3._0;
+                                          return A2(loginEffects,_p4.username,_p4.password);
+                                       } else {
+                                          return $Effects.none;
+                                       }
+                                 }()};
+         case "SubmitLogin": var _p5 = _p2._0;
+           return {ctor: "_Tuple2",_0: model,_1: A2(loginEffects,_p5.username,_p5.password)};
+         case "LoginComplete": return {ctor: "_Tuple2"
+                                      ,_0: _U.update(model,{token: A2($Maybe.withDefault,"no token",_p2._0),state: Authenticated})
+                                      ,_1: $Effects.none};
+         default: return {ctor: "_Tuple2",_0: _U.update(model,{token: "",state: Unauthenticated}),_1: $Effects.none};}
    });
-   return _elm.Auth.values = {_op: _op,update: update,view: view,init: init,Model: Model};
+   return _elm.Login.values = {_op: _op,update: update,view: view,init: init,Model: Model};
 };
 Elm.StartApp = Elm.StartApp || {};
 Elm.StartApp.make = function (_elm) {
@@ -11046,18 +12027,18 @@ Elm.Main.make = function (_elm) {
    _elm.Main = _elm.Main || {};
    if (_elm.Main.values) return _elm.Main.values;
    var _U = Elm.Native.Utils.make(_elm),
-   $Auth = Elm.Auth.make(_elm),
    $Basics = Elm.Basics.make(_elm),
    $Debug = Elm.Debug.make(_elm),
    $Effects = Elm.Effects.make(_elm),
    $List = Elm.List.make(_elm),
+   $Login = Elm.Login.make(_elm),
    $Maybe = Elm.Maybe.make(_elm),
    $Result = Elm.Result.make(_elm),
    $Signal = Elm.Signal.make(_elm),
    $StartApp = Elm.StartApp.make(_elm),
    $Task = Elm.Task.make(_elm);
    var _op = {};
-   var app = $StartApp.start({init: $Auth.init,update: $Auth.update,view: $Auth.view,inputs: _U.list([])});
+   var app = $StartApp.start({init: $Login.init,update: $Login.update,view: $Login.view,inputs: _U.list([])});
    var main = app.html;
    var tasks = Elm.Native.Task.make(_elm).performSignal("tasks",app.tasks);
    return _elm.Main.values = {_op: _op,app: app,main: main};
