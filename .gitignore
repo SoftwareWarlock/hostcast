@@ -1,3 +1,5 @@
 *.sqlite3
-node_modules/
+node_modules/*
 *.log
+elm-stuff/*
+django/static/js/elm.js

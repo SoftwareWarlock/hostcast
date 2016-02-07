@@ -4,12 +4,13 @@
   "description": "Podcast hosting made easy",
   "dependencies": {},
   "devDependencies": {
-    "elm": "^0.16.0"
+    "elm": "^0.16.0",
+    "watch": "^0.17.1"
   },
   "scripts": {
     "postinstall": "elm-package install && sudo pip install -r requirements.txt",
     "build": "elm make elm/Main.elm --output=django/static/js/elm.js",
-    "start-elm": "elm-reactor -p 8081",
+    "start-elm": "watch 'npm run build' elm/ & elm-reactor -p 8081",
     "start-django": "cd django && python manage.py runserver 0.0.0.0:8080",
     "start": "npm run start-elm & npm run start-django"
   },
