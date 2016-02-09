@@ -23,7 +23,7 @@ type alias Login =
     }
 
 type alias Model = 
-    { token: String
+    { token: Maybe String
     , state: State
     , form: Form () Login
     }
@@ -35,7 +35,7 @@ type Action
     | Logout
 
 init: (Model, Effects Action)
-init = ( { token = ""
+init = ( { token = Nothing
          , state = Unauthenticated
          , form = Form.initial [] validate
          }
@@ -65,7 +65,7 @@ update action model =
 
         LoginComplete maybeToken ->
             ( { model
-              | token = (Maybe.withDefault "no token" maybeToken)
+              | token = maybeToken
               , state = Authenticated
               }
             , Effects.none
@@ -73,7 +73,7 @@ update action model =
 
         Logout ->
             ( { model
-              | token = ""
+              | token = Just ""
               , state = Unauthenticated
               }
             , Effects.none
@@ -82,7 +82,7 @@ update action model =
 view: Signal.Address Action -> Model -> Html
 view address model =
     case model.state of
-        Authenticated -> text model.token
+        Authenticated -> text "Authenticated"
 
         Unauthenticated ->
             let

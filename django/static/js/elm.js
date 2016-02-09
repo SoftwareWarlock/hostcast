@@ -8810,13 +8810,18 @@ Elm.Auth.make = function (_elm) {
       $Json$Encode.object(_U.list([{ctor: "_Tuple2",_0: "username",_1: $Json$Encode.string(username)}
                                   ,{ctor: "_Tuple2",_0: "password",_1: $Json$Encode.string(password)}])));
    });
+   var registerBody = F2(function (username,password) {    return $Http.string(A2(jsonUserObject,username,password));});
+   var registerRequest = function (body) {
+      return {verb: "POST",headers: _U.list([{ctor: "_Tuple2",_0: "Content-Type",_1: "application/json"}]),url: "/auth/register/",body: body};
+   };
    var loginBody = F2(function (username,password) {    return $Http.string(A2(jsonUserObject,username,password));});
    var loginRequest = function (body) {
       return {verb: "POST",headers: _U.list([{ctor: "_Tuple2",_0: "Content-Type",_1: "application/json"}]),url: "/auth/login/",body: body};
    };
    var sendAuthRequest = function (request) {    return A2($Http.fromJson,decodeToken,A2($Http.send,$Http.defaultSettings,request));};
+   var register = F2(function (username,password) {    return sendAuthRequest(registerRequest(A2(registerBody,username,password)));});
    var login = F2(function (username,password) {    return sendAuthRequest(loginRequest(A2(loginBody,username,password)));});
-   return _elm.Auth.values = {_op: _op,login: login};
+   return _elm.Auth.values = {_op: _op,login: login,register: register};
 };
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 
@@ -11894,11 +11899,11 @@ Elm.Form.Input.make = function (_elm) {
                                    ,radioInput: radioInput
                                    ,dumpErrors: dumpErrors};
 };
-Elm.Login = Elm.Login || {};
-Elm.Login.make = function (_elm) {
+Elm.Register = Elm.Register || {};
+Elm.Register.make = function (_elm) {
    "use strict";
-   _elm.Login = _elm.Login || {};
-   if (_elm.Login.values) return _elm.Login.values;
+   _elm.Register = _elm.Register || {};
+   if (_elm.Register.values) return _elm.Register.values;
    var _U = Elm.Native.Utils.make(_elm),
    $Auth = Elm.Auth.make(_elm),
    $Basics = Elm.Basics.make(_elm),
@@ -11916,71 +11921,73 @@ Elm.Login.make = function (_elm) {
    $Signal = Elm.Signal.make(_elm),
    $Task = Elm.Task.make(_elm);
    var _op = {};
-   var Logout = {ctor: "Logout"};
-   var LoginComplete = function (a) {    return {ctor: "LoginComplete",_0: a};};
-   var loginEffects = F2(function (username,password) {
-      return $Effects.task(A2($Task.map,LoginComplete,$Task.toMaybe(A2($Auth.login,username,password))));
+   var ServerError = {ctor: "ServerError"};
+   var PasswordMismatch = {ctor: "PasswordMismatch"};
+   var UsernameTaken = {ctor: "UsernameTaken"};
+   var RegisterComplete = function (a) {    return {ctor: "RegisterComplete",_0: a};};
+   var registerEffects = F2(function (username,password) {
+      return $Effects.task(A2($Task.map,RegisterComplete,$Task.toMaybe(A2($Auth.register,username,password))));
    });
-   var SubmitLogin = function (a) {    return {ctor: "SubmitLogin",_0: a};};
+   var update = F2(function (action,model) {
+      var _p0 = action;
+      switch (_p0.ctor)
+      {case "FormAction": return {ctor: "_Tuple2",_0: _U.update(model,{form: A2($Form.update,_p0._0,model.form)}),_1: $Effects.none};
+         case "SubmitRegister": var _p1 = _p0._0;
+           return {ctor: "_Tuple2",_0: model,_1: A2(registerEffects,_p1.username,_p1.passwordOnce)};
+         default: return {ctor: "_Tuple2",_0: model,_1: $Effects.none};}
+   });
+   var SubmitRegister = function (a) {    return {ctor: "SubmitRegister",_0: a};};
    var FormAction = function (a) {    return {ctor: "FormAction",_0: a};};
    var view = F2(function (address,model) {
-      var _p0 = model.state;
-      if (_p0.ctor === "Authenticated") {
-            return $Html.text(model.token);
+      var _p2 = model.state;
+      if (_p2.ctor === "Registered") {
+            return $Html.text("Registered");
          } else {
-            var password = A2($Form.getFieldAsString,"password",model.form);
+            var passwordTwice = A2($Form.getFieldAsString,"passwordTwice",model.form);
+            var passwordOnce = A2($Form.getFieldAsString,"passwordOnce",model.form);
             var username = A2($Form.getFieldAsString,"username",model.form);
             var errorFor = function (field) {
-               var _p1 = field.liveError;
-               if (_p1.ctor === "Just") {
-                     return A2($Html.div,_U.list([$Html$Attributes.$class("error")]),_U.list([$Html.text($Basics.toString(_p1._0))]));
+               var _p3 = field.liveError;
+               if (_p3.ctor === "Just") {
+                     return A2($Html.div,_U.list([$Html$Attributes.$class("error")]),_U.list([$Html.text($Basics.toString(_p3._0))]));
                   } else {
                      return $Html.text("");
                   }
             };
             var formAddress = A2($Signal.forwardTo,address,FormAction);
+            var clickEvent = function () {
+               var _p4 = $Form.getOutput(model.form);
+               if (_p4.ctor === "Just") {
+                     return A2($Html$Events.onClick,address,SubmitRegister(_p4._0));
+                  } else {
+                     return A2($Html$Events.onClick,formAddress,$Form.submit);
+                  }
+            }();
             return A2($Html.div,
             _U.list([]),
             _U.list([A2($Html.label,_U.list([]),_U.list([$Html.text("Username")]))
                     ,A3($Form$Input.textInput,username,formAddress,_U.list([]))
                     ,errorFor(username)
                     ,A2($Html.label,_U.list([]),_U.list([$Html.text("Password")]))
-                    ,A3($Form$Input.textInput,password,formAddress,_U.list([]))
-                    ,errorFor(password)
-                    ,A2($Html.button,_U.list([A2($Html$Events.onClick,formAddress,$Form.submit)]),_U.list([$Html.text("Login")]))]));
+                    ,A3($Form$Input.textInput,passwordOnce,formAddress,_U.list([]))
+                    ,errorFor(passwordOnce)
+                    ,A2($Html.label,_U.list([]),_U.list([$Html.text("Re-enter password")]))
+                    ,A3($Form$Input.textInput,passwordTwice,formAddress,_U.list([]))
+                    ,errorFor(passwordTwice)
+                    ,A2($Html.button,_U.list([clickEvent]),_U.list([$Html.text("Register")]))]));
          }
    });
-   var Model = F3(function (a,b,c) {    return {token: a,state: b,form: c};});
-   var Login = F2(function (a,b) {    return {username: a,password: b};});
-   var validate = A3($Form$Validate.form2,
-   Login,
-   A2($Form$Validate._op[":="],"username",$Form$Validate.string),
-   A2($Form$Validate._op[":="],"password",$Form$Validate.string));
-   var Unauthenticated = {ctor: "Unauthenticated"};
-   var init = {ctor: "_Tuple2",_0: {token: "",state: Unauthenticated,form: A2($Form.initial,_U.list([]),validate)},_1: $Effects.none};
-   var Authenticated = {ctor: "Authenticated"};
-   var update = F2(function (action,model) {
-      var _p2 = action;
-      switch (_p2.ctor)
-      {case "FormAction": return {ctor: "_Tuple2"
-                                 ,_0: _U.update(model,{form: A2($Form.update,_p2._0,model.form)})
-                                 ,_1: function () {
-                                    var _p3 = $Form.getOutput(model.form);
-                                    if (_p3.ctor === "Just") {
-                                          var _p4 = _p3._0;
-                                          return A2(loginEffects,_p4.username,_p4.password);
-                                       } else {
-                                          return $Effects.none;
-                                       }
-                                 }()};
-         case "SubmitLogin": var _p5 = _p2._0;
-           return {ctor: "_Tuple2",_0: model,_1: A2(loginEffects,_p5.username,_p5.password)};
-         case "LoginComplete": return {ctor: "_Tuple2"
-                                      ,_0: _U.update(model,{token: A2($Maybe.withDefault,"no token",_p2._0),state: Authenticated})
-                                      ,_1: $Effects.none};
-         default: return {ctor: "_Tuple2",_0: _U.update(model,{token: "",state: Unauthenticated}),_1: $Effects.none};}
-   });
-   return _elm.Login.values = {_op: _op,update: update,view: view,init: init,Model: Model};
+   var Model = F2(function (a,b) {    return {state: a,form: b};});
+   var Registration = F3(function (a,b,c) {    return {username: a,passwordOnce: b,passwordTwice: c};});
+   var validate = A4($Form$Validate.form3,
+   Registration,
+   A2($Form$Validate._op[":="],"username",A2($Form$Validate.andThen,$Form$Validate.string,$Form$Validate.nonEmpty)),
+   A2($Form$Validate._op[":="],"passwordOnce",$Form$Validate.string),
+   A2($Form$Validate._op[":="],"passwordTwice",$Form$Validate.string));
+   var Unregistered = {ctor: "Unregistered"};
+   var init = {ctor: "_Tuple2",_0: {state: Unregistered,form: A2($Form.initial,_U.list([]),validate)},_1: $Effects.none};
+   var Registered = {ctor: "Registered"};
+   return _elm.Register.values = {_op: _op,update: update,view: view,init: init,Model: Model};
 };
 Elm.StartApp = Elm.StartApp || {};
 Elm.StartApp.make = function (_elm) {
@@ -12031,14 +12038,14 @@ Elm.Main.make = function (_elm) {
    $Debug = Elm.Debug.make(_elm),
    $Effects = Elm.Effects.make(_elm),
    $List = Elm.List.make(_elm),
-   $Login = Elm.Login.make(_elm),
    $Maybe = Elm.Maybe.make(_elm),
+   $Register = Elm.Register.make(_elm),
    $Result = Elm.Result.make(_elm),
    $Signal = Elm.Signal.make(_elm),
    $StartApp = Elm.StartApp.make(_elm),
    $Task = Elm.Task.make(_elm);
    var _op = {};
-   var app = $StartApp.start({init: $Login.init,update: $Login.update,view: $Login.view,inputs: _U.list([])});
+   var app = $StartApp.start({init: $Register.init,update: $Register.update,view: $Register.view,inputs: _U.list([])});
    var main = app.html;
    var tasks = Elm.Native.Task.make(_elm).performSignal("tasks",app.tasks);
    return _elm.Main.values = {_op: _op,app: app,main: main};
