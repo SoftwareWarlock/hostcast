@@ -96,6 +96,11 @@ view address model =
                             text ""
                 username = Form.getFieldAsString "username" model.form
                 password = Form.getFieldAsString "password" model.form
+                clickEvent = case Form.getOutput of
+                    Just login ->
+                        onClick address SubmitLogin login
+                    Nothing ->
+                        onClick formAddress Form.submit
             in
                 div []
                     [ label [] [ text "Username" ]
@@ -107,7 +112,7 @@ view address model =
                     , errorFor password
 
                     , button
-                        [ onClick formAddress Form.submit ]
+                        [ clickEvent ]
                         [ text "Login" ]
                     ]
 
