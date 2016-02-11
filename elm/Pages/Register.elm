@@ -1,6 +1,6 @@
-module Register (Model, Action, update, view, init) where
+module Pages.Register (Model, Action, update, view, init) where
 
-import Auth
+import Services.Auth as Auth
 
 import Effects exposing (Effects, Never)
 import Task exposing (toMaybe, map)
@@ -36,12 +36,11 @@ type Action
 type RegisterError =
     UsernameTaken | PasswordMismatch | ServerError
 
-init: (Model, Effects Action)
-init = ( { state = Unregistered
-         , form = Form.initial [] validate
-         }
-       , Effects.none
-       )
+init: Model
+init = 
+    { state = Unregistered
+    , form = Form.initial [] validate
+    }
 
 validate: Validation RegisterError Registration
 validate = 
@@ -65,8 +64,7 @@ update action model =
     case action of
         FormAction formAction ->
             ( { model | form = Form.update formAction model.form }
-            , 
-            Effects.none
+            , Effects.none
             )
 
         SubmitRegister registration ->

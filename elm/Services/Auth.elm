@@ -1,4 +1,4 @@
-module Auth (login, register) where
+module Services.Auth (login, register) where
 
 import Effects exposing (Effects, Never)
 import Task exposing (..)

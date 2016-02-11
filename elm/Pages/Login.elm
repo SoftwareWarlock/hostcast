@@ -1,6 +1,6 @@
-module Login (Model, Action, update, view, init) where
+module Pages.Login (Model, Action, update, view, init) where
 
-import Auth
+import Services.Auth as Auth
 
 import Effects exposing (Effects, Never)
 import Task exposing (..)
@@ -34,13 +34,12 @@ type Action
     | LoginComplete (Maybe String)
     | Logout
 
-init: (Model, Effects Action)
-init = ( { token = Nothing
-         , state = Unauthenticated
-         , form = Form.initial [] validate
-         }
-       , Effects.none
-       )
+init: Model
+init =  
+    { token = Nothing
+    , state = Unauthenticated
+    , form = Form.initial [] validate
+    }
 
 validate: Validation () Login
 validate = 
@@ -53,9 +52,7 @@ update action model =
     case action of
         FormAction formAction ->
             ( { model | form = Form.update formAction model.form }
-            , case Form.getOutput model.form of
-                Just login -> loginEffects login.username login.password
-                Nothing -> Effects.none
+            , Effects.none
             )
 
         SubmitLogin login ->
@@ -96,9 +93,9 @@ view address model =
                             text ""
                 username = Form.getFieldAsString "username" model.form
                 password = Form.getFieldAsString "password" model.form
-                clickEvent = case Form.getOutput of
+                clickEvent = case Form.getOutput model.form of
                     Just login ->
-                        onClick address SubmitLogin login
+                        onClick address (SubmitLogin login)
                     Nothing ->
                         onClick formAddress Form.submit
             in

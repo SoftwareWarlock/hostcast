@@ -15,7 +15,9 @@
 
         <!-- JavaScript scripts -->
         <script src="{% static "js/elm.js" %}"></script>
-        <script type="text/javascript">Elm.fullscreen(Elm.Main)</script>
+        <script type="text/javascript">
+            Elm.fullscreen(Elm.Main, {initialPath: window.location.pathname});
+        </script>
 
     </body>
 </html>  

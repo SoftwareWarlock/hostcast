@@ -1,15 +1,21 @@
 import Html exposing (text)
-import Register exposing (update, view, init)
 import StartApp
 import Task
 import Effects exposing (Never)
 
+import Update exposing (init, update, actions)
+import View exposing (view)
+
+
+port initialPath: String
+
+
 app = 
     StartApp.start
-    { init = init
+    { init = init initialPath
     , update = update
     , view = view
-    , inputs = []
+    , inputs = [ actions ]
     }
 
 main = app.html
