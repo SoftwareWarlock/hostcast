@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework.authtoken',
     'djoser',
+    'hostcast',
     'podcasts',
 ]
 
@@ -59,6 +60,8 @@ MIDDLEWARE_CLASSES = [
 ]
 
 ROOT_URLCONF = 'hostcast.urls'
+
+AUTH_USER_MODEL = 'hostcast.User'
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (

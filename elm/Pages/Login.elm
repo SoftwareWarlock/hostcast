@@ -3,28 +3,26 @@ module Pages.Login (Model, Action, update, view, init) where
 import Services.Auth as Auth
 
 import Effects exposing (Effects, Never)
-import Task exposing (..)
+import Task
 
 import Html exposing (..)
 import Html.Attributes exposing (style, class)
 import Html.Events exposing (onClick)
 
 import Form exposing (Form)
-import Form.Validate as Validate exposing (..)
+import Form.Validate as Validate exposing (string, (:=), Validation, form2)
 import Form.Input as Input
 
-type State
-    = Authenticated
-    | Unauthenticated
+import Maybe exposing (map, andThen)
+
 
 type alias Login = 
-    { username: String
+    { email: String
     , password: String
     }
 
 type alias Model = 
-    { token: Maybe String
-    , state: State
+    { user: Maybe Auth.User
     , form: Form () Login
     }
 
@@ -34,20 +32,19 @@ type Action
     | LoginComplete (Maybe String)
     | Logout
 
-init: Model
+init : Model
 init =  
-    { token = Nothing
-    , state = Unauthenticated
+    { user = Nothing
     , form = Form.initial [] validate
     }
 
-validate: Validation () Login
+validate : Validation () Login
 validate = 
     form2 Login
-        ("username" := string)
+        ("email" := string)
         ("password" := string)
 
-update: Action -> Model -> (Model, Effects Action)
+update : Action -> Model -> (Model, Effects Action)
 update action model =
     case action of
         FormAction formAction ->
@@ -57,31 +54,44 @@ update action model =
 
         SubmitLogin login ->
             ( model
-            , loginEffects login.username login.password
+            , loginEffects login.email login.password
             )
 
         LoginComplete maybeToken ->
             ( { model
-              | token = maybeToken
-              , state = Authenticated
+              | user = createUser maybeToken (getFieldAsMaybe "email" model.form)
               }
             , Effects.none
             )
 
         Logout ->
-            ( { model
-              | token = Just ""
-              , state = Unauthenticated
-              }
+            ( { model | user = Nothing }
             , Effects.none
             )
 
-view: Signal.Address Action -> Model -> Html
-view address model =
-    case model.state of
-        Authenticated -> text "Authenticated"
 
-        Unauthenticated ->
+createUser : Maybe String -> Maybe String -> Maybe Auth.User
+createUser maybeToken maybeEmail =
+    maybeToken `andThen` \token -> 
+        maybeEmail |>
+            map (\email -> 
+                 { token = token
+                 , email = email 
+                 })
+
+
+getFieldAsMaybe : String -> Form.Form a b -> Maybe String
+getFieldAsMaybe field form =
+    Form.getFieldAsString field form
+        |> .value
+
+
+view : Signal.Address Action -> Model -> Html
+view address model =
+    case model.user of
+        Just user -> text user.email
+
+        Nothing ->
             let
                 formAddress = Signal.forwardTo address FormAction
 
@@ -91,7 +101,7 @@ view address model =
                             div [ class "error" ] [ text (toString error) ]
                         Nothing ->
                             text ""
-                username = Form.getFieldAsString "username" model.form
+                email = Form.getFieldAsString "email" model.form
                 password = Form.getFieldAsString "password" model.form
                 clickEvent = case Form.getOutput model.form of
                     Just login ->
@@ -100,9 +110,9 @@ view address model =
                         onClick formAddress Form.submit
             in
                 div []
-                    [ label [] [ text "Username" ]
-                    , Input.textInput username formAddress []
-                    , errorFor username
+                    [ label [] [ text "Email" ]
+                    , Input.textInput email formAddress []
+                    , errorFor email
 
                     , label [] [ text "Password" ]
                     , Input.textInput password formAddress []
@@ -113,9 +123,9 @@ view address model =
                         [ text "Login" ]
                     ]
 
-loginEffects: String -> String -> Effects Action
-loginEffects username password =
-    Auth.login username password
+loginEffects : String -> String -> Effects Action
+loginEffects email password =
+    Auth.login email password
         |> Task.toMaybe
         |> Task.map LoginComplete
         |> Effects.task

@@ -15,6 +15,6 @@ router.register(r'episodes', EpisodeViewSet)
 urlpatterns = [
     url(r'^admin/', admin.site.urls),
     url(r'^auth/', include('djoser.urls.authtoken')),
-    url(r'^$', TemplateView.as_view(template_name='index.html')),
+    url(r'^app/*', TemplateView.as_view(template_name='index.html')),
     url(r'^api/', include(router.urls)),
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

@@ -1,4 +1,4 @@
-module Pages.Register (Model, Action, update, view, init) where
+odule Pages.Register (Model, Action, update, view, init) where
 
 import Services.Auth as Auth
 
@@ -18,7 +18,7 @@ type State
     | Unregistered
 
 type alias Registration = 
-    { username: String
+    { email: String
     , passwordOnce: String
     , passwordTwice: String
     }
@@ -45,7 +45,7 @@ init =
 validate: Validation RegisterError Registration
 validate = 
     form3 Registration
-        ("username" := string `andThen` nonEmpty)
+        ("email" := string `andThen` nonEmpty)
         ("passwordOnce" := string)
         ("passwordTwice" := string) --`andThen` (matches ("passwordOne" := string)))
 
@@ -69,7 +69,7 @@ update action model =
 
         SubmitRegister registration ->
             ( model
-            , registerEffects registration.username registration.passwordOnce
+            , registerEffects registration.email registration.passwordOnce
             )
 
         RegisterComplete _ ->
@@ -92,7 +92,7 @@ view address model =
                             div [ class "error" ] [ text (toString error) ]
                         Nothing ->
                             text ""
-                username = Form.getFieldAsString "username" model.form
+                email = Form.getFieldAsString "email" model.form
                 passwordOnce = Form.getFieldAsString "passwordOnce" model.form
                 passwordTwice = Form.getFieldAsString "passwordTwice" model.form
                 clickEvent = case Form.getOutput model.form of
@@ -102,16 +102,16 @@ view address model =
                         onClick formAddress Form.submit
             in
                 div []
-                    [ label [] [ text "Username" ]
-                    , Input.textInput username formAddress []
-                    , errorFor username
+                    [ label [] [ text "Email" ]
+                    , Input.textInput email formAddress []
+                    , errorFor email
 
                     , label [] [ text "Password" ]
-                    , Input.textInput passwordOnce formAddress []
+                    , Input.passwordInput passwordOnce formAddress []
                     , errorFor passwordOnce
 
                     , label [] [ text "Re-enter password" ]
-                    , Input.textInput passwordTwice formAddress []
+                    , Input.passwordInput passwordTwice formAddress []
                     , errorFor passwordTwice
 
                     , button
@@ -120,8 +120,8 @@ view address model =
                     ]
 
 registerEffects: String -> String -> Effects Action
-registerEffects username password =
-    Auth.register username password
+registerEffects email password =
+    Auth.register email password
         |> Task.toMaybe
         |> Task.map RegisterComplete
         |> Effects.task

@@ -1,4 +1,4 @@
-module Services.Auth (login, register) where
+module Services.Auth (login, register, User) where
 
 import Effects exposing (Effects, Never)
 import Task exposing (..)
@@ -7,22 +7,27 @@ import Http exposing (..)
 import Json.Decode as JsonDecode
 import Json.Encode as JsonEncode
 
-login: String -> String -> Task Error String
-login username password =
-    loginBody username password
+type alias User =
+    { email: String
+    , token: String
+    }
+
+login : String -> String -> Task Error String
+login email password =
+    loginBody email password
         |> loginRequest 
         |> sendAuthRequest
 
-register: String -> String -> Task Error String
-register username password =
-    registerBody username password
+register : String -> String -> Task Error String
+register email password =
+    registerBody email password
         |> registerRequest
         |> sendAuthRequest 
 
-sendAuthRequest: Request -> Task Error String
+sendAuthRequest : Request -> Task Error String
 sendAuthRequest request = fromJson decodeToken (send defaultSettings request)
 
-loginRequest: Body -> Request
+loginRequest : Body -> Request
 loginRequest body = 
     { verb = "POST"
     , headers = [ ("Content-Type", "application/json") ]
@@ -30,11 +35,11 @@ loginRequest body =
     , body = body
     }
 
-loginBody: String -> String -> Body
-loginBody username password =
-    string (jsonUserObject username password)
+loginBody : String -> String -> Body
+loginBody email password =
+    string (jsonUserObject email password)
 
-registerRequest: Body -> Request
+registerRequest : Body -> Request
 registerRequest body = 
     { verb = "POST"
     , headers = [ ("Content-Type", "application/json") ]
@@ -43,14 +48,14 @@ registerRequest body =
     }
 
 registerBody: String -> String -> Body
-registerBody username password =
-    string (jsonUserObject username password)
+registerBody email password =
+    string (jsonUserObject email password)
 
-jsonUserObject: String -> String -> String
-jsonUserObject username password = 
+jsonUserObject : String -> String -> String
+jsonUserObject email password = 
     JsonEncode.encode 4 ( 
         JsonEncode.object
-            [ ("username", JsonEncode.string username)
+            [ ("email", JsonEncode.string email)
             , ("password", JsonEncode.string password)
             ]
         )

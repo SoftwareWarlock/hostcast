@@ -3,3 +3,4 @@ node_modules/*
 *.log
 elm-stuff/*
 django/static/js/elm.js
+*.pyc
