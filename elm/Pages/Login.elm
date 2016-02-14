@@ -1,9 +1,9 @@
 module Pages.Login (Model, Action, update, view, init) where
 
-import Services.Auth as Auth
+import Services.Auth as Auth exposing (ServerResult, RegisterResponse, ServerErrors)
 
 import Effects exposing (Effects, Never)
-import Task
+import Task exposing (Task)
 
 import Html exposing (..)
 import Html.Attributes exposing (style, class)
@@ -14,6 +14,10 @@ import Form.Validate as Validate exposing (string, (:=), Validation, form2)
 import Form.Input as Input
 
 import Maybe exposing (map, andThen)
+import Dict exposing (Dict)
+
+import Result exposing (Result(Ok, Err))
+import Response exposing (..)
 
 
 type alias Login = 
@@ -24,18 +28,22 @@ type alias Login =
 type alias Model = 
     { user: Maybe Auth.User
     , form: Form () Login
+    , serverErrors: ServerErrors
+    , loading: Bool
     }
 
 type Action 
     = FormAction Form.Action
     | SubmitLogin Login
-    | LoginComplete (Maybe String)
+    | LoginComplete (ServerResult String)
     | Logout
 
 init : Model
 init =  
     { user = Nothing
     , form = Form.initial [] validate
+    , serverErrors = Dict.empty
+    , loading = False
     }
 
 validate : Validation () Login
@@ -48,36 +56,25 @@ update : Action -> Model -> (Model, Effects Action)
 update action model =
     case action of
         FormAction formAction ->
-            ( { model | form = Form.update formAction model.form }
-            , Effects.none
-            )
+            res { model | form = Form.update formAction model.form } Effects.none
 
         SubmitLogin login ->
-            ( model
-            , loginEffects login.email login.password
-            )
+            taskRes model (loginEffects login.email login.password)
 
-        LoginComplete maybeToken ->
-            ( { model
-              | user = createUser maybeToken (getFieldAsMaybe "email" model.form)
-              }
-            , Effects.none
-            )
+        LoginComplete serverResponse ->
+            case serverResponse of
+                Ok token ->
+                    let
+                        newUser = 
+                            getFieldAsMaybe "email" model.form
+                                |> Maybe.map (\email -> { email = email, token = token })
+                    in
+                        res { model | user = newUser, loading = False } Effects.none
+                Err serverErrors ->
+                    res { model | loading = False, serverErrors = serverErrors } Effects.none
 
         Logout ->
-            ( { model | user = Nothing }
-            , Effects.none
-            )
-
-
-createUser : Maybe String -> Maybe String -> Maybe Auth.User
-createUser maybeToken maybeEmail =
-    maybeToken `andThen` \token -> 
-        maybeEmail |>
-            map (\email -> 
-                 { token = token
-                 , email = email 
-                 })
+            res { model | user = Nothing } Effects.none
 
 
 getFieldAsMaybe : String -> Form.Form a b -> Maybe String
@@ -95,12 +92,6 @@ view address model =
             let
                 formAddress = Signal.forwardTo address FormAction
 
-                errorFor field =
-                    case field.liveError of
-                        Just error ->
-                            div [ class "error" ] [ text (toString error) ]
-                        Nothing ->
-                            text ""
                 email = Form.getFieldAsString "email" model.form
                 password = Form.getFieldAsString "password" model.form
                 clickEvent = case Form.getOutput model.form of
@@ -108,24 +99,46 @@ view address model =
                         onClick address (SubmitLogin login)
                     Nothing ->
                         onClick formAddress Form.submit
+                serverErrorsFor = getServerErrorsFor model.serverErrors
             in
                 div []
                     [ label [] [ text "Email" ]
                     , Input.textInput email formAddress []
                     , errorFor email
+                    , serverErrorsFor "email"
 
                     , label [] [ text "Password" ]
-                    , Input.textInput password formAddress []
+                    , Input.passwordInput password formAddress []
                     , errorFor password
+                    , serverErrorsFor "password"
 
+                    , serverErrorsFor "non_field_errors"
                     , button
                         [ clickEvent ]
                         [ text "Login" ]
                     ]
 
-loginEffects : String -> String -> Effects Action
+errorFor field =
+    case field.liveError of
+        Just error ->
+            errorDiv (toString error)
+        Nothing ->
+            text ""
+
+
+errorDiv error = 
+    div [ class "error" ] [ text error ]
+
+
+getServerErrorsFor : ServerErrors -> String -> Html
+getServerErrorsFor serverErrors field =
+    case Dict.get field serverErrors of
+        Just errorList ->
+            div [] (List.map errorDiv errorList)
+        Nothing ->
+            text ""
+
+loginEffects : String -> String -> Task Never Action
 loginEffects email password =
     Auth.login email password
-        |> Task.toMaybe
         |> Task.map LoginComplete
-        |> Effects.task
