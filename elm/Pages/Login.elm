@@ -6,7 +6,7 @@ import Effects exposing (Effects, Never)
 import Task exposing (Task)
 
 import Html exposing (..)
-import Html.Attributes exposing (style, class)
+import Html.Attributes exposing (..)
 import Html.Events exposing (onClick)
 
 import Form exposing (Form)
@@ -18,6 +18,8 @@ import Dict exposing (Dict)
 
 import Result exposing (Result(Ok, Err))
 import Response exposing (..)
+
+import Json.Encode as Json
 
 
 type alias Login = 
@@ -59,7 +61,8 @@ update action model =
             res { model | form = Form.update formAction model.form } Effects.none
 
         SubmitLogin login ->
-            taskRes model (loginEffects login.email login.password)
+            taskRes { model | serverErrors = Dict.empty }
+                (loginEffects login.email login.password)
 
         LoginComplete serverResponse ->
             case serverResponse of
@@ -99,44 +102,65 @@ view address model =
                         onClick address (SubmitLogin login)
                     Nothing ->
                         onClick formAddress Form.submit
-                serverErrorsFor = getServerErrorsFor model.serverErrors
+                nonFieldErrors = 
+                    getServerErrorsFor model.serverErrors "non_field_errors"
             in
-                div []
-                    [ label [] [ text "Email" ]
-                    , Input.textInput email formAddress []
-                    , errorFor email
-                    , serverErrorsFor "email"
+                div [ class "row" ]
+                    [ Html.form [ class "col s12" ] 
+                        [ div [ class "row" ] 
+                            [ div [ class "col s6"]
+                                [ label [ ] 
+                                    ([ text "Email" ] ++
+                                    (allFieldErrors model "email" |> divsFromErrors))
+                                , Input.textInput email formAddress []
+                                ]
 
-                    , label [] [ text "Password" ]
-                    , Input.passwordInput password formAddress []
-                    , errorFor password
-                    , serverErrorsFor "password"
+                            , div [ class "col s6" ]
+                                [ label [ ] 
+                                    ([ text "Password" ] ++ 
+                                    (allFieldErrors model "password" |> divsFromErrors))
+                                , Input.passwordInput password formAddress []
+                                ]
 
-                    , serverErrorsFor "non_field_errors"
-                    , button
-                        [ clickEvent ]
-                        [ text "Login" ]
+                            , case nonFieldErrors of
+                                [] -> 
+                                    text ""
+                                _ -> div [] (List.map errorDiv nonFieldErrors)
+                            , button
+                                [ clickEvent ]
+                                [ text "Login" ]
+                            ]
+                        ]
                     ]
 
-errorFor field =
+divsFromErrors errors =
+    List.map errorDiv errors
+
+allFieldErrors model fieldName =
+    let
+        serverErrors = getServerErrorsFor model.serverErrors fieldName
+        formField = Form.getFieldAsString fieldName model.form
+        formErrors = formErrorFor formField
+    in
+        formErrors ++ serverErrors
+
+
+formErrorFor field =
     case field.liveError of
         Just error ->
-            errorDiv (toString error)
+            [ toString error ]
         Nothing ->
-            text ""
-
+            [ ]
 
 errorDiv error = 
-    div [ class "error" ] [ text error ]
+    div [ class "card-panel white-text red darken-2" ] [ text error ]
 
-
-getServerErrorsFor : ServerErrors -> String -> Html
 getServerErrorsFor serverErrors field =
     case Dict.get field serverErrors of
         Just errorList ->
-            div [] (List.map errorDiv errorList)
+           errorList
         Nothing ->
-            text ""
+            [ ]
 
 loginEffects : String -> String -> Task Never Action
 loginEffects email password =

@@ -18,14 +18,20 @@ view : Address Action -> Model -> Html
 view address model =
     div
       [ ]
-      [ h1 [ ] [ text "Hostcast - Podcast hosting made simple" ]
-      , div [ ]
-          [ a (clickTo <| Routes.encode Home) [ text "Home" ]
-          , a (clickTo <| Routes.encode Register) [ text "Register" ]
-          , a (clickTo <| Routes.encode Login) [ text "Login" ]
+      [ nav [ class "teal lighten-1" ] 
+          [ div [ class "nav-wrapper container" ] 
+              [ a ((clickTo <| Routes.encode Home) ++ [ class "brand-logo" ]) [ text "Hostcast" ]
+              , ul [ id "nav-mobile"
+                   , class "right hide-on-med-and-down"
+                   ]
+                [ li [ ] [  a (clickTo <| Routes.encode Home) [ text "Home" ] ]
+                , li [ ] [ a (clickTo <| Routes.encode Register) [ text "Register" ] ]
+                , li [ ] [ a (clickTo <| Routes.encode Login) [ text "Login" ] ]
+                ]
+              ]
           ]
       , div
-          [ ]
+          [ class "container" ]
           [ case (TransitRouter.getRoute model) of
               Home ->
                   text <| "Welcome to Hostcast"
