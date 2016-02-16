@@ -10,7 +10,7 @@ import TransitRouter exposing (getTransition)
 
 import Model exposing (..)
 import Routes exposing (..)
-import Pages.Login
+import Pages.Login.View as Login
 import Pages.Register
 
 
@@ -38,7 +38,7 @@ view address model =
               Register ->
                   Pages.Register.view (Signal.forwardTo address RegisterPageAction) model.registerPageModel
               Login ->
-                  Pages.Login.view (Signal.forwardTo address LoginPageAction) model.loginPageModel
+                  Login.view (Signal.forwardTo address LoginPageAction) model.loginPageModel
               NotFound ->
                   text <| "Not found"
           ]
