@@ -25,6 +25,7 @@ type Action
     = FormAction Form.Action
     | SubmitRegister Registration
     | RegisterComplete (ServerResult RegisterResponse)
+    | NoOp
 
 
 init : Model

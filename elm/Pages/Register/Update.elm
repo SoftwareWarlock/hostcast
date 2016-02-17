@@ -2,6 +2,7 @@ module Pages.Register.Update where
 import Pages.Register.Model exposing (..)
 
 import Services.Auth as Auth exposing (ServerResult, RegisterResponse)
+import Routes
 
 import Task exposing (toMaybe, map, Task)
 import Effects exposing (Effects, Never, none)
@@ -24,11 +25,22 @@ update action model =
             taskRes { model | loading = True } (registerTask registration)
 
         RegisterComplete result ->
-            case result of
-                Ok _ ->
-                    res { model | loading = False } none
-                Err errors ->
-                    res { model | loading = False, serverErrors = errors } none
+            let
+                newModel = { model | loading = True }
+                makeNoOp = (\_ -> NoOp)
+                redirectEffect = 
+                    Effects.map
+                        makeNoOp
+                        (Routes.redirect Routes.Login)
+            in
+                case result of
+                    Ok _ ->
+                        res newModel redirectEffect
+                    Err errors ->
+                        res { model | serverErrors = errors } none
+
+        NoOp ->
+            res model none
 
 
 registerTask : Registration -> Task Never Action

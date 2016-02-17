@@ -16,14 +16,6 @@ view address model =
         let
             formAddress = Signal.forwardTo address FormAction
 
-            errorFor field =
-                case field.liveError of
-                    Just error ->
-                        div [ class "error" ] [ text (toString error) ]
-                    Nothing ->
-                        text ""
-            email = Form.getFieldAsString "email" model.form
-            password = Form.getFieldAsString "password" model.form
             clickEvent = case Form.getOutput model.form of
                 Just registration ->
                     onClick address (SubmitRegister registration)

@@ -16,7 +16,7 @@ type alias User =
     }
 
 type alias RegisterResponse =
-    { id: String
+    { id: Int
     , email: String
     }
 
@@ -96,7 +96,7 @@ decodeToken =
 decodeRegisterResponse : JsonDecode.Decoder RegisterResponse
 decodeRegisterResponse = 
     JsonDecode.object2 RegisterResponse
-        ("id" := JsonDecode.string)
+        ("id" := JsonDecode.int)
         ("email" := JsonDecode.string)
 
 
