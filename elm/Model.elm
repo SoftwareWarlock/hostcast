@@ -3,7 +3,7 @@ module Model where
 import TransitRouter exposing (WithRoute)
 import Routes exposing (Route)
 import Pages.Login.Model as Login
-import Pages.Register
+import Pages.Register.Model as Register
 
 import Services.Auth as Auth
 
@@ -23,7 +23,7 @@ appAddress =
 
 
 type alias Model = WithRoute Route
-    { registerPageModel: Pages.Register.Model
+    { registerPageModel: Register.Model
     , loginPageModel: Login.Model
     , user: Maybe Auth.User
     }
@@ -31,7 +31,7 @@ type alias Model = WithRoute Route
 
 type Action
     = NoOp
-    | RegisterPageAction Pages.Register.Action
+    | RegisterPageAction Register.Action
     | LoginPageAction Login.Action
     | RouterAction (TransitRouter.Action Route)
     | SetUser (Maybe Auth.User)
@@ -41,6 +41,6 @@ initialModel : Model
 initialModel =
     { transitRouter = TransitRouter.empty Home
     , loginPageModel = Login.init
-    , registerPageModel = Pages.Register.init
+    , registerPageModel = Register.init
     , user = Nothing
     }

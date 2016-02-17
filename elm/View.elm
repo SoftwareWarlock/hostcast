@@ -11,7 +11,7 @@ import TransitRouter exposing (getTransition)
 import Model exposing (..)
 import Routes exposing (..)
 import Pages.Login.View as Login
-import Pages.Register
+import Pages.Register.View as Register
 
 
 view : Address Action -> Model -> Html
@@ -36,7 +36,7 @@ view address model =
               Home ->
                   text <| "Welcome to Hostcast"
               Register ->
-                  Pages.Register.view (Signal.forwardTo address RegisterPageAction) model.registerPageModel
+                  Register.view (Signal.forwardTo address RegisterPageAction) model.registerPageModel
               Login ->
                   Login.view (Signal.forwardTo address LoginPageAction) model.loginPageModel
               NotFound ->

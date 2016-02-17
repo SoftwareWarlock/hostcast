@@ -6,7 +6,7 @@ import TransitRouter
 import Model exposing (..)
 import Routes exposing (..)
 import Pages.Login.Update as Login
-import Pages.Register
+import Pages.Register.Update as Register
 
 
 actions : Signal Action
@@ -35,7 +35,7 @@ update action model =
             (model, Effects.none)
 
         RegisterPageAction registerAction ->
-            let (newModel, effects) = Pages.Register.update registerAction model.registerPageModel
+            let (newModel, effects) = Register.update registerAction model.registerPageModel
             in ( { model | registerPageModel = newModel }
                , Effects.map RegisterPageAction effects )
 
