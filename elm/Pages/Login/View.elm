@@ -22,17 +22,20 @@ view address model =
                 onClick formAddress Form.submit
     in
         div [ class "row" ]
-            [ Html.form [ class "col s6 offset-s3" ] 
-                [ div [ class "row" ] 
-                    [ emailFormField model formAddress
-                    , passwordFormField model formAddress
-                    , nonFieldErrorsView model
-                    , button
-                        [ clickEvent 
-                        , class "waves-effect waves-light btn right-align"
-                        , type' "button"
+            [ div [ class "col s6 offset-s3" ]
+                [ h4 [ ] [ text "Login" ]
+                , Html.form [ ] 
+                    [ div [ class "row" ] 
+                        [ emailFormField model formAddress
+                        , passwordFormField model formAddress
+                        , nonFieldErrorsView model
+                        , button
+                            [ clickEvent 
+                            , class "waves-effect waves-light btn right-align"
+                            , type' "button"
+                            ]
+                            [ text "Login" ]
                         ]
-                        [ text "Login" ]
                     ]
                 ]
             ]
