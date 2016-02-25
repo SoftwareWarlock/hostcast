@@ -13,23 +13,14 @@ import Routes exposing (..)
 import Pages.Login.View as Login
 import Pages.Register.View as Register
 
+import View.Helpers exposing (navbar)
+
 
 view : Address Action -> Model -> Html
 view address model =
     div
       [ ]
-      [ nav [ class "teal lighten-1" ] 
-          [ div [ class "nav-wrapper container" ] 
-              [ a ((clickTo <| Routes.encode Home) ++ [ class "brand-logo" ]) [ text "Hostcast" ]
-              , ul [ id "nav-mobile"
-                   , class "right hide-on-med-and-down"
-                   ]
-                [ li [ ] [  a (clickTo <| Routes.encode Home) [ text "Home" ] ]
-                , li [ ] [ a (clickTo <| Routes.encode Register) [ text "Register" ] ]
-                , li [ ] [ a (clickTo <| Routes.encode Login) [ text "Login" ] ]
-                ]
-              ]
-          ]
+      [ navbar <| shouldShowLoginAndRegister model
       , div
           [ class "container" ]
           [ case (TransitRouter.getRoute model) of
@@ -45,12 +36,8 @@ view address model =
       ]
 
 
-clickTo : String -> List Attribute
-clickTo path =
-      [ href path
-      , onWithOptions
-          "click"
-          { stopPropagation = True, preventDefault = True }
-          Json.value
-          (\_ -> message TransitRouter.pushPathAddress path)
-      ]
+shouldShowLoginAndRegister: Model -> Bool
+shouldShowLoginAndRegister model =
+    case model.user of
+        Just _ -> False
+        Nothing -> True

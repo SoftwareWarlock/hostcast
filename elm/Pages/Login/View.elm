@@ -24,7 +24,7 @@ view address model =
         div [ class "row" ]
             [ div [ class "col s6 offset-s3" ]
                 [ h4 [ ] [ text "Login" ]
-                , Html.form [ ] 
+                , Html.form [ novalidate True ] 
                     [ div [ class "row" ] 
                         [ emailFormField model formAddress
                         , passwordFormField model formAddress

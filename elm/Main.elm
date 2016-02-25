@@ -3,6 +3,7 @@ import StartApp
 import Task
 import Effects exposing (Never)
 
+import Model exposing (appMailbox)
 import Update exposing (init, update, actions)
 import View exposing (view)
 
@@ -15,7 +16,10 @@ app =
     { init = init initialPath
     , update = update
     , view = view
-    , inputs = [ actions ]
+    , inputs = 
+        [ actions 
+        , appMailbox.signal
+        ]
     }
 
 main = app.html

@@ -1,0 +1,9 @@
+label.invalid {
+    display: inline;
+    color: red;
+    font-size: 0.8rem;
+    left: 0;
+    position: relative;
+    top: -15px;
+    transform: none !important;
+}
