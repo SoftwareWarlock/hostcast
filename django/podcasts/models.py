@@ -13,3 +13,4 @@ class Episode(models.Model):
     file = models.FileField(upload_to='uploads/attachments/%Y/%m/%d', null=True)
     show_notes = models.TextField()  # Should be in markdown
     podcast = models.ForeignKey(Podcast, related_name="episodes")
+    published = models.BooleanField(default=False)

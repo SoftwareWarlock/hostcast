@@ -2,6 +2,7 @@ module Update.Utils where
 
 import Model exposing (appAddress)
 import Services.Auth as Auth
+import Services.Podcasts exposing (Podcast)
 
 import Effects exposing (Effects)
 

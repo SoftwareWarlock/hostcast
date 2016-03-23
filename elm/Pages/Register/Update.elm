@@ -1,7 +1,8 @@
 module Pages.Register.Update where
 import Pages.Register.Model exposing (..)
 
-import Services.Auth as Auth exposing (ServerResult, RegisterResponse)
+import Services.Auth as Auth exposing (RegisterResponse)
+import Services.Helpers exposing (ServerResult)
 import Routes
 
 import Task exposing (toMaybe, map, Task)

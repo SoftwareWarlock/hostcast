@@ -2,7 +2,8 @@ module Pages.Login.Update where
 
 import Pages.Login.Model exposing (..)
 
-import Services.Auth as Auth exposing (ServerResult, RegisterResponse, ServerErrors)
+import Services.Auth as Auth exposing (RegisterResponse) 
+import Services.Helpers exposing (ServerResult, ServerErrors)
 import Update.Utils as Utils
 
 import Routes

@@ -7,6 +7,11 @@ import Model exposing (..)
 import Routes exposing (..)
 import Pages.Login.Update as Login
 import Pages.Register.Update as Register
+import Pages.Home.Update as Home
+
+import Services.Podcasts as Podcasts
+import Task
+import Response exposing (..)
 
 
 actions : Signal Action
@@ -44,18 +49,34 @@ update action model =
             in ( { model | loginPageModel = newModel }
                , Effects.map LoginPageAction effects )
 
+        HomePageAction homePageAction ->
+            let (newModel, effects) = Home.update homePageAction model.homePageModel
+            in ( { model | homePageModel = newModel }
+               , Effects.map HomePageAction effects )
+
         RouterAction routeAction ->
             TransitRouter.update routerConfig routeAction model
 
         SetUser user ->
-            ({ model | user = user }, Effects.none)
+            let
+                homeModel = model.homePageModel
+                newHomeModel = { homeModel | user = user }
+                newModel =
+                    { model
+                    | user = user
+                    , homePageModel = newHomeModel
+                    }
+            in
+                (newModel, Effects.none)
 
 
 mountRoute : Route -> Route -> Model -> (Model, Effects Action)
 mountRoute previousRoute route model =
     case route of
         Home ->
-            (model, Effects.none)
+            Home.podcastsResolveTask model.homePageModel
+                |> Task.map (\a -> HomePageAction a)
+                |> taskRes model
 
         Login ->
             (model, Effects.none)

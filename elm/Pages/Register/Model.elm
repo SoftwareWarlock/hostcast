@@ -1,6 +1,7 @@
 module Pages.Register.Model where
 
-import Services.Auth as Auth exposing (ServerResult, RegisterResponse)
+import Services.Auth as Auth exposing (RegisterResponse)
+import Services.Helpers exposing (ServerResult)
 
 import Form exposing (Form)
 import Form.Validate as Validate exposing (..)

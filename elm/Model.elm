@@ -4,8 +4,10 @@ import TransitRouter exposing (WithRoute)
 import Routes exposing (Route)
 import Pages.Login.Model as Login
 import Pages.Register.Model as Register
+import Pages.Home.Model as Home
 
 import Services.Auth as Auth
+import Services.Podcasts exposing (Podcast)
 
 import Effects exposing (Effects)
 import TransitRouter
@@ -25,6 +27,7 @@ appAddress =
 type alias Model = WithRoute Route
     { registerPageModel: Register.Model
     , loginPageModel: Login.Model
+    , homePageModel: Home.Model
     , user: Maybe Auth.User
     }
 
@@ -33,6 +36,7 @@ type Action
     = NoOp
     | RegisterPageAction Register.Action
     | LoginPageAction Login.Action
+    | HomePageAction Home.Action
     | RouterAction (TransitRouter.Action Route)
     | SetUser (Maybe Auth.User)
 
@@ -42,5 +46,6 @@ initialModel =
     { transitRouter = TransitRouter.empty Home
     , loginPageModel = Login.init
     , registerPageModel = Register.init
+    , homePageModel = Home.init
     , user = Nothing
     }

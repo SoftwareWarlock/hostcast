@@ -1,6 +1,7 @@
 module Pages.Login.Model where
 
-import Services.Auth as Auth exposing (ServerResult, ServerErrors)
+import Services.Auth as Auth
+import Services.Helpers exposing (ServerResult, ServerErrors)
 
 import Form.Validate as Validate exposing (string, (:=), Validation, form2)
 import Form exposing (Form)

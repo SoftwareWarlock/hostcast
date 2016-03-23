@@ -12,6 +12,7 @@ import Model exposing (..)
 import Routes exposing (..)
 import Pages.Login.View as Login
 import Pages.Register.View as Register
+import Pages.Home.View as Home
 
 import View.Helpers exposing (navbar)
 
@@ -25,7 +26,7 @@ view address model =
           [ class "container" ]
           [ case (TransitRouter.getRoute model) of
               Home ->
-                  text <| "Welcome to Hostcast"
+                  Home.view (Signal.forwardTo address HomePageAction) model.homePageModel
               Register ->
                   Register.view (Signal.forwardTo address RegisterPageAction) model.registerPageModel
               Login ->
