@@ -9,6 +9,7 @@ type Route
     = Home
     | Login
     | Register
+    | CreatePodcast
     | NotFound
 
 
@@ -28,6 +29,7 @@ routeParsers =
     , static Home (getRoute "/")
     , static Login (getRoute "/login")
     , static Register (getRoute "/register")
+    , static CreatePodcast (getRoute "/create-podcast")
     ]
 
 
@@ -43,6 +45,7 @@ encode route =
         Home -> (getRoute "")
         Login -> (getRoute "/login")
         Register -> (getRoute "/register")
+        CreatePodcast -> (getRoute "/create-podcast")
         NotFound -> (getRoute "/not-found")
 
 

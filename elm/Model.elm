@@ -5,6 +5,7 @@ import Routes exposing (Route)
 import Pages.Login.Model as Login
 import Pages.Register.Model as Register
 import Pages.Home.Model as Home
+import Pages.CreatePodcast.Model as CreatePodcast
 
 import Services.Auth as Auth
 import Services.Podcasts exposing (Podcast)
@@ -28,6 +29,7 @@ type alias Model = WithRoute Route
     { registerPageModel: Register.Model
     , loginPageModel: Login.Model
     , homePageModel: Home.Model
+    , createPodcastModel: CreatePodcast.Model
     , user: Maybe Auth.User
     }
 
@@ -37,6 +39,7 @@ type Action
     | RegisterPageAction Register.Action
     | LoginPageAction Login.Action
     | HomePageAction Home.Action
+    | CreatePodcastAction CreatePodcast.Action
     | RouterAction (TransitRouter.Action Route)
     | SetUser (Maybe Auth.User)
 
@@ -47,5 +50,6 @@ initialModel =
     , loginPageModel = Login.init
     , registerPageModel = Register.init
     , homePageModel = Home.init
+    , createPodcastModel = CreatePodcast.init
     , user = Nothing
     }

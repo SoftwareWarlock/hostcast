@@ -87,6 +87,9 @@ createInputField model formAddress fieldName displayName inputFunction =
 emailTypeTextInput field formAddress attributes =
     Input.textInput field formAddress <| attributes ++ [ type' "email" ]
 
+textAreaInput field formAddress attributes =
+    Input.textArea field formAddress <| attributes ++ [ class "materialize-textarea" ]
+
 passwordFormField model formAddress = 
     createInputField model formAddress "password" "Password" Input.passwordInput
 

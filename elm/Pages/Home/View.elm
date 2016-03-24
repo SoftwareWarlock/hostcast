@@ -23,7 +23,7 @@ podcastListView podcasts =
         [] ->
             span [] 
                 [ text "To get started, let's "
-                , a (clickTo <| Routes.encode Home) 
+                , a (clickTo <| Routes.encode CreatePodcast) 
                     [ text "create your first podcast"
                     ] 
                 ]

@@ -13,6 +13,7 @@ import Routes exposing (..)
 import Pages.Login.View as Login
 import Pages.Register.View as Register
 import Pages.Home.View as Home
+import Pages.CreatePodcast.View as CreatePodcast
 
 import View.Helpers exposing (navbar)
 
@@ -31,6 +32,12 @@ view address model =
                   Register.view (Signal.forwardTo address RegisterPageAction) model.registerPageModel
               Login ->
                   Login.view (Signal.forwardTo address LoginPageAction) model.loginPageModel
+
+              CreatePodcast ->
+                  CreatePodcast.view 
+                      (Signal.forwardTo address CreatePodcastAction)
+                      (model.createPodcastModel)
+
               NotFound ->
                   text <| "Not found"
           ]

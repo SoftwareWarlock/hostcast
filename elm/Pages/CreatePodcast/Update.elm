@@ -1,10 +1,17 @@
 module Pages.CreatePodcast.Update where
+import Pages.CreatePodcast.Model exposing (..)
 
-import Services.Podcasts as Podcasts
+import Services.Podcasts as Podcasts exposing (Podcast)
+
+import Routes
 
 import Form exposing (Form)
 import Response exposing (..)
 import Result exposing (Result(Ok, Err))
+import Task exposing (Task)
+import Effects exposing (Effects, Never)
+
+import Dict
 
 
 update : Action -> Model -> (Model, Effects Action)
@@ -14,29 +21,37 @@ update action model =
             res { model | form = Form.update formAction model.form } Effects.none
 
         SubmitPodcast podcast ->
-            taskRes { model | serverErrors = Dict.empty }
-                (submitPodcastEffects podcast)
+            case model.user of
+                Just user ->
+                    taskRes { model | serverErrors = Dict.empty }
+                        (submitPodcastTask podcast user.token)
+                Nothing ->
+                    res model Effects.none
 
         PodcastCreated serverResult ->
-            case serverResult of
-                Ok podcast ->
-                    let
-                        redirectEffect = 
-                            Effects.map (\_ -> NoOp) <| Routes.redirect Routes.Home
+            let 
+                newModel = 
+                    { model
+                    | loading = False
+                    , serverErrors = Dict.empty
+                    }
+            in
+                case serverResult of
+                    Ok podcast ->
+                        let
+                            redirectEffect = 
+                                Effects.map (\_ -> NoOp) <| Routes.redirect Routes.Home
+                        in
+                            res newModel redirectEffect
 
-                        newModel = 
-                            { model
-                            | loading = False
-                            , serverErrors = Dict.empty
-                            }
-                    in
-                        res newModel redirectEffect
+                    Err serverErrors ->
+                        res { newModel | serverErrors = serverErrors } Effects.none
 
-                Err serverErrors ->
-                    res { newModel | serverErrors = serverErrors } Effects.none
+        NoOp ->
+            res model Effects.none
 
 
-submitPodcastTask : Podcast -> Task Never Action
-submitPodcastTask podcast =
-    Podcasts.createPodcast podcast
-        |> Task.map 
+submitPodcastTask : Podcast -> String -> Task Never Action
+submitPodcastTask podcast token =
+    Podcasts.createPodcast token podcast
+        |> Task.map PodcastCreated

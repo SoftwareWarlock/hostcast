@@ -8,6 +8,8 @@ import Routes exposing (..)
 import Pages.Login.Update as Login
 import Pages.Register.Update as Register
 import Pages.Home.Update as Home
+import Pages.CreatePodcast.Update as CreatePodcast
+import Pages.CreatePodcast.Model as CreatePodcastModel
 
 import Services.Podcasts as Podcasts
 import Task
@@ -54,6 +56,14 @@ update action model =
             in ( { model | homePageModel = newModel }
                , Effects.map HomePageAction effects )
 
+        CreatePodcastAction createPodcastAction ->
+            let 
+                (newModel, effects) = 
+                    CreatePodcast.update createPodcastAction model.createPodcastModel
+            in 
+                ( { model | createPodcastModel = newModel }
+                , Effects.map CreatePodcastAction effects )
+
         RouterAction routeAction ->
             TransitRouter.update routerConfig routeAction model
 
@@ -86,3 +96,11 @@ mountRoute previousRoute route model =
 
         NotFound ->
             (model, Effects.none)
+
+        CreatePodcast ->
+            let
+                initialModel = CreatePodcastModel.init
+                newCreatePodcastModel = { initialModel | user = model.user }
+                newModel = { model | createPodcastModel = newCreatePodcastModel }
+            in
+                (newModel, Effects.none)
